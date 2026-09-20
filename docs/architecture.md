@@ -261,7 +261,7 @@ erDiagram
     string_array reason
     string text
     string step_id FK "null if scope=overall"
-    string profile_hash
+    string profile_hash "salted with session_id, see below"
     string content_version
     string session_id
     int seconds_since_generation
@@ -272,6 +272,9 @@ Two constraints from the PRD that the schema must preserve, called out because t
 
 - **`STEP.id` is stable across content versions.** It's the join key for a returning user's checkbox state in `localStorage`. If a content update changes step ordering and `id` is derived from array position instead of being assigned once and kept, every returning user's ticked steps silently reassign to the wrong step. This has to be an explicit, author-assigned identifier from the moment the step schema is frozen (week 1).
 - **`GUIDE` is keyed on `(bucket_signature, program_level)`, never on an individual user or on `arrival_date`.** This is the entire reason one cached record serves an unbounded number of students.
+- **`FEEDBACK.profile_hash` is salted per `session_id`** (decided in `docs/decisions.md`), so it can't be matched across sessions or against the plain profile parameters in a shared URL, while `content_version`-based regression analysis still works within a session.
+- **Client-side checkbox state is now three-valued** — done / not done / not applicable, keyed on `STEP.id` in `localStorage` — not the two-valued state implied by the ERD above (the ERD models published content, not per-user progress). A user marking a step "not applicable" is a signal that step's `applies_to_rules` may be wrong for that bucket; route these to the review owner's queue the same way thumbs-down reason chips do.
+- **Timeline step count is capped at 20** per guide (decided in `docs/decisions.md`), up from the 16 in the current draft content.
 
 ## 8. Deployment shape (demo scale)
 
@@ -291,11 +294,16 @@ flowchart LR
 
 At twelve guide variants, the entire Guide store fits comfortably in memory or as static JSON files behind a CDN — there is no scaling problem on the read path at this scope. The only stateful write path in the online system is the feedback/analytics API, which is low-volume and non-blocking (the guide renders whether or not an event write succeeds).
 
-## Open items this document surfaces but doesn't resolve
+## Decisions resolved 2026-09-20
 
-These map to blocking items in `docs/prd-review.md` and need an owner's decision, not an engineering default:
+The four open items originally listed here are now decided with the product owner; full rationale in `docs/decisions.md`.
 
-1. Exact definition of "confidence threshold" (embedding similarity cutoff, or something else) — needed before week 1 variant generation.
-2. Behavior on review rejection: does the whole nightly publish hold, or does only the rejected step revert while the rest of that variant publishes? The sequence in §3 assumes per-step revert; confirm that's intended.
-3. The "signature has no pre-generated variant" guide-level state (§4, §5) needs the same design treatment as the PRD's other guide-level states — it's a real path at 32 theoretical vs. ~6 realized bucket signatures.
-4. Whether a failed crawl (§3) should alert someone (the review owner?) after N consecutive failures, so a whitelist site restructuring doesn't quietly freeze a source's `last_verified` date for weeks before anyone notices the stale banners piling up.
+1. **Confidence threshold:** embedding similarity is the baseline signal; the review owner tunes the per-bucket cutoff after week 1's pilot bucket, rather than fixing one global number before any real content exists.
+2. **Review rejection:** confirmed per-step revert, as §3's sequence diagram already assumed — only the rejected step reverts; the rest of that variant still publishes.
+3. **Unmatched bucket signature:** treated as a taxonomy-coverage signal. An observed real signature outside the initial ~6 gets added to the generated set through the normal pipeline (generate → diff → review → publish), rather than permanently served from a "closest match" or "not covered" state.
+4. **Crawl-failure alerting:** 3 consecutive failed crawls on the same source now alert the review owner alongside the nightly review queue.
+
+## Still open
+
+- **Interim behavior for an unmatched bucket signature.** Decision 3 above says the *long-run* answer is "expand the generated set," but expansion requires a full pipeline cycle (crawl → generate → review → publish) — it isn't instant. Between a signature first being observed and the next reviewed publish that adds it, the online request path (§4–5) still needs *some* rendered response. This needs a decision before week 2, since the timeline/resolving screens can't be built against an undefined state. Candidates: temporarily serve the nearest existing variant with a visible approximate-match tag, or a guide-level "we're adding your exact situation, here's the closest one for now" state — either is a small addition to the guide-level state set already defined in the PRD's content-states section.
+- **Product name.** Still "Landfall" as a placeholder; blocks week 2 copy per `docs/decisions.md`.

@@ -286,15 +286,17 @@ Content freeze lands mid-week 4. After it, only corrections, not additions.
 
 Each of these needs a human answer before the relevant week starts. They are ordered by when they block.
 
-- [ ] **Confirm the demo date.** This document assumes 16 October 2026. Every week in the plan moves with it.
-- [ ] **Approve the pre-generated architecture.** If the team prefers live generation, week 1 changes and the review gate goes. Blocks week 1.
-- [ ] **Name the review owner.** Someone has to sign off changed steps before publication. Without a name, the gate is decorative. Blocks week 1.
-- [ ] **Freeze the bucket taxonomy.** Five buckets are proposed above. Adding a sixth after week 1 invalidates generated content. Blocks week 2.
-- [ ] **Decide the product name.** Landfall is a placeholder used throughout the prototype and this document. Blocks week 2 copy.
-- [ ] **Set the recheck window.** How old is a last-checked date before a step shows the stale banner? Suggest 30 days for immigration, 90 for the rest. Blocks week 3.
-- [ ] **Confirm the metric denominators.** Level tap as the completion start, and silent users excluded from helpful rate. Blocks week 4 instrumentation.
-- [ ] **Decide on a not-applicable state.** Steps currently have done or not done. A not-applicable option is how we learn which bucket rules are wrong, at the cost of a third state. Blocks week 3.
-- [ ] **Cap the step count.** Sixteen steps today. Past roughly twenty the timeline stops feeling navigable on a phone.
-- [ ] **Agree who sends reminder emails.** Requires a sending domain and an unsubscribe mechanism that we do not have yet. Cut the feature if this is not resolved by week 3.
+Resolved 2026-09-20 with the product owner — see `docs/decisions.md` for full rationale on each.
+
+- [x] **Confirm the demo date.** Kept at 16 October 2026. Build starts today (20 September 2026), about 2 days tighter than the nominal 4-week plan.
+- [x] **Approve the pre-generated architecture.** Approved as written. Live generation stays a post-MVP option, not revisited for this build.
+- [x] **Name the review owner.** Product owner is the review owner and also receives crawl-failure alerts.
+- [x] **Freeze the bucket taxonomy.** Five buckets stand. Coverage of signatures outside the initial ~6 generated variants is handled by expanding the generated set through the normal pipeline, not by reopening the taxonomy (see `docs/decisions.md`).
+- [ ] **Decide the product name.** Landfall remains a placeholder. Still open — blocks week 2 copy.
+- [x] **Set the recheck window.** 30 days for immigration, 90 for the rest, as suggested.
+- [x] **Confirm the metric denominators.** Level tap as the completion start; silent users excluded from helpful rate (tracked separately).
+- [x] **Decide on a not-applicable state.** Adding it. Steps get done / not done / not applicable.
+- [x] **Cap the step count.** 20 steps.
+- [x] **Agree who sends reminder emails.** Product owner owns the sending domain and unsubscribe mechanism. Cut the feature if not ready by week 3, per the existing plan.
 
 Two things are decided and should not be reopened without new evidence. Academics stay out of scope, on the strength of 14.3% and 9.5% against two open-text accounts. The undergraduate and graduate split stays in, because reaching no undergraduates was a limit of distribution rather than a finding about need.

@@ -1,0 +1,36 @@
+# Landfall — Decision log
+
+Resolves the open decisions in `docs/prd.md` and the blocking/important items raised in `docs/prd-review.md` and `docs/architecture.md`. Decided 2026-09-20 with the product owner. Each entry below is now the authoritative answer; `prd.md`, `prd-review.md`, and `architecture.md` are annotated to point here rather than restate it.
+
+## From the PRD's open decisions
+
+| # | Decision | Resolution |
+| --- | --- | --- |
+| 1 | Confirm the demo date | Kept at 16 October 2026. Build starts today, 20 September 2026 — about 3.7 weeks, roughly 2 days tighter than the PRD's nominal 4-week plan. Proceed on the existing week-by-week plan; watch week 4 for slack. |
+| 2 | Approve the pre-generated architecture | Approved as written: nightly offline RAG across 12 variants, human review gate, sub-second cache-read serving path. Not revisited for this build; live generation stays a post-MVP option once traffic/freshness needs are better understood. |
+| 3 | Name the review owner | Product owner (you) is the review owner — signs off changed steps before each publish, and is the one who gets crawl-failure alerts (see below). |
+| 4 | Freeze the bucket taxonomy | Five buckets stand (entry document, biometrics, medical exam, funds evidence, currency corridor). Coverage policy below (§ Unmatched bucket signature) governs what happens when a real signature falls outside the initially generated set — it does not reopen the taxonomy itself. |
+| 5 | Decide the product name | Not decided. "Landfall" remains a placeholder for week 2 copy. **Still an open blocker** — revisit before week 2 copy work starts. |
+| 6 | Set the recheck window | 30 days for immigration content, 90 days for everything else, as the PRD suggested. |
+| 7 | Confirm the metric denominators | Confirmed as proposed: completion rate denominator is the program-level tap (not landing page view); helpful rate excludes users who rate individual steps but never give an overall rating (tracked separately, not folded in as neutral). |
+| 8 | Decide on a not-applicable state | Adding it. Steps get a third state — done / not done / not applicable — specifically to give the review owner a signal when an `applies_to_rules` tag is wrong for a bucket. |
+| 9 | Cap the step count | 20 steps, matching the PRD's own stated ceiling for phone navigability (up from today's 16). |
+| 10 | Agree who sends reminder emails | Product owner (you) owns securing the sending domain and unsubscribe mechanism. If not ready by week 3, the PRD's existing fallback applies: cut the feature for this build. |
+
+## From the architecture review
+
+| # | Item | Resolution |
+| --- | --- | --- |
+| 1 | Confidence threshold mechanism | Baseline is embedding similarity between a step's claim and its best-matching retrieved chunk. The review owner tunes the per-bucket cutoff after week 1's single end-to-end bucket pilot, rather than shipping one global number on day one. |
+| 2 | Review-gate rejection behavior | Per-step revert: a rejected step reverts to its last-published content; every other approved step in that variant still publishes under the new `content_version`. Confirms the mechanism already assumed in `architecture.md` §3. |
+| 3 | Bucket signature with no pre-generated variant | Treated as a taxonomy signal, not a serve-time edge case: an observed real signature outside the initial ~6 gets added to the generation set (through the normal generate → diff → review → publish pipeline), rather than permanently routed to a "closest match" or "not covered" state. **Open follow-up:** the interim behavior for a user who hits an unmatched signature *before* it's been added (i.e., during the gap between first observation and the next reviewed publish) is not yet decided — needs a follow-up call before week 2, since the online serving path (architecture.md §4–5) still needs some rendered response in that gap. |
+| 4 | Crawl-failure alerting | After 3 consecutive failed crawls on the same source, the pipeline alerts the review owner alongside the nightly review queue, rather than relying on the stale banner alone to surface it. |
+| 5 | Undergraduate path disclosure | A light in-product caveat ships on the undergraduate guide (e.g. "this path is newer and less tested than the graduate path"), matching the same honesty standard already applied to source last-checked dates. Internal-only framing at the demo (per the PRD's risk table) stays in addition to this, not instead of it. |
+| 6 | `profile_hash` re-identification risk | `profile_hash` is salted per anonymous `session_id` before being sent in feedback events, so it can't be matched across sessions or against the plain profile parameters in a shared URL. `content_version`-based regression analysis still works within a session. |
+| 7 | Housing pointer links | Two links: the UBC housing website and the UBC Facebook roommates group. No affiliation is claimed — the landing page states plainly that Landfall doesn't cover housing and these are just starting points. The product owner verifies and updates these two links directly (not through the whitelist/citation pipeline, since housing content isn't whitelisted). A full housing feature is acknowledged as a likely future addition given the demand and anxiety the survey surfaced, but is explicitly not in scope for this build. |
+| 8 | Sample-size caveat visibility | No change. The PRD's existing inline caveats (graduate-only sample, warm demo panel, all-arrived-successfully) are sufficient; no additional top-of-document disclaimer. |
+
+## Still open
+
+- **Product name.** Blocks week 2 copy.
+- **Interim behavior for an unmatched bucket signature** between first observation and the next reviewed publish that adds it. Blocks the online serving path's guide-level states (architecture.md §4–5) — needs a decision before week 2 build of the timeline/resolving screens.
