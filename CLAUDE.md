@@ -4,7 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository state
 
-This repository currently contains planning documents only — no application code, build tooling, or tests exist yet. There are no commands to build, lint, or test. When implementation work begins, update this file with the actual commands (package manager, test runner, single-test invocation) rather than leaving this section stale.
+Two code trees exist alongside the planning docs, per `docs/decisions.md` and `docs/implementation-plan.md`:
+
+- `apps/web/` — the Next.js (TypeScript, App Router, Tailwind) client. Scaffolded, no product screens built yet.
+- `pipeline/` — the Python content pipeline (crawler, chunker, RAG generation via Claude Opus 5, review/diff, publish). Schema, diff engine, chunker, and publish logic are implemented and tested; crawler/generation modules need real API credentials and a confirmed whitelist to run end to end (see `pipeline/landfall_pipeline/crawler/whitelist.py`).
+
+### Commands
+
+**Client (`apps/web/`):**
+```bash
+npm install        # first time only
+npm run dev         # local dev server
+npm run build        # production build
+npm run lint         # eslint
+```
+
+**Pipeline (`pipeline/`):**
+```bash
+python3 -m venv .venv && source .venv/bin/activate   # first time only
+pip install -r requirements.txt
+cp .env.example .env   # then fill in ANTHROPIC_API_KEY, VOYAGE_API_KEY
+
+pytest                          # run all tests
+pytest tests/test_diff.py       # single file
+pytest tests/test_diff.py::test_diff_detects_added_changed_removed_unchanged  # single test
+```
+Pipeline tests cover pure-logic modules only (schema, diff, chunker, publish) — no external API calls, no credentials needed to run them.
+
+Both `.env.example` files (`apps/web/.env.example`, `pipeline/.env.example`) list the required environment variables. Never commit a real `.env`/`.env.local` — both are gitignored.
 
 ## What's here
 
