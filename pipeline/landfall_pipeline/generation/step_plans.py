@@ -107,9 +107,9 @@ def build_step_plan(bucket: BucketSignature, level: ProgramLevel) -> list[StepPl
             "apply-for-sin",
             "first_two_weeks",
             3,
-            "Apply for a Social Insurance Number (SIN) as a new international graduate "
-            "student who will work as a teaching or research assistant, so payroll isn't "
-            "delayed",
+            "Apply for a Social Insurance Number (SIN) with Service Canada as a new "
+            "international graduate student, needed promptly since graduate students often "
+            "work as teaching or research assistants and a delay pushes back payroll",
         ))
     else:
         plan.append((

@@ -105,8 +105,24 @@ async function fetchGuide(bucketSignature: string, level: ProgramLevel): Promise
 // hand-maintained here until there are enough guides to warrant
 // generating this list at build time.
 const PUBLISHED_SIGNATURES: Record<ProgramLevel, string[]> = {
-  graduate: ["visa_required-required-required-country_programme_variant-restricted"],
-  undergraduate: [],
+  graduate: [
+    "visa_required-required-required-country_programme_variant-restricted",
+    "eta-exempt-not_required-standard-major",
+    "visa_required-required-not_required-country_programme_variant-restricted",
+    "eta-required-required-standard-major",
+    "eta-required-not_required-standard-major",
+    "visa_required-required-not_required-standard-major",
+    "visa_required-required-required-standard-major",
+  ],
+  undergraduate: [
+    "visa_required-required-required-country_programme_variant-restricted",
+    "eta-exempt-not_required-standard-major",
+    "visa_required-required-not_required-country_programme_variant-restricted",
+    "eta-required-required-standard-major",
+    "eta-required-not_required-standard-major",
+    "visa_required-required-not_required-standard-major",
+    "visa_required-required-required-standard-major",
+  ],
 };
 
 const DIMENSION_WEIGHTS: [keyof BucketSignature, number][] = [

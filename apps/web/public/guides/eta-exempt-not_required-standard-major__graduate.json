@@ -1,5 +1,5 @@
 {
-  "content_version": 1,
+  "content_version": 2,
   "program_level": "graduate",
   "bucket_signature": "eta-exempt-not_required-standard-major",
   "steps": [
@@ -134,21 +134,46 @@
       "id": "apply-for-sin",
       "phase": "first_two_weeks",
       "offset_days": 3,
-      "title": "Apply for a Social Insurance Number (SIN) as a new international graduate student who will work as a teaching or research assistant, so payroll isn't delayed",
-      "why": "We could not verify the specifics for this step against our sources.",
-      "prerequisites": [],
+      "title": "Apply for your Social Insurance Number (SIN) online with Service Canada",
+      "why": "A SIN is the 9-digit number Service Canada issues that you need to start working in Canada, file taxes, and access government programs \u2014 and UBC requires it for tax purposes. Graduate TA/RA appointments are insurable employment, so applying right after arrival keeps payroll on schedule: online applications may take up to 5 business days, mail up to 20, while in-person appointments issue the SIN during your visit. As an international student you'll receive a SIN starting with '9', signalling temporary resident status. Note that having a SIN alone doesn't make you eligible to work \u2014 your study permit conditions must also allow it. Never share your SIN; it is sensitive personal information and a common target for phone and email scams.",
+      "prerequisites": [
+        "Arrive in Canada and receive your study permit at the airport or border crossing (you cannot apply before arrival unless you already hold a study or work permit)",
+        "Confirm your study permit carries a work condition, e.g. 'May accept employment on or off campus if meeting eligibility criteria, per paragraph R186(f), (v) or (w)...', 'May work 24 hours per week off campus or full time during regular breaks...', or 'May accept employment on the campus of the institution at which registered in full-time studies'",
+        "If your permit has no work condition (e.g. you previously attended secondary school), apply to change your study permit conditions and wait for the new permit before applying for a SIN",
+        "A copy of your passport in addition to your study or work permit; arrange a translation for any document not in English or French",
+        "After you receive it, add your SIN in Workday so UBC has it for tax purposes"
+      ],
       "cost": null,
-      "time_estimate": null,
+      "time_estimate": "Online: up to 5 business days; by mail: up to 20 business days; in person: SIN issued during your visit",
       "where": {
-        "label": "Official source",
-        "host": "",
-        "url": ""
+        "label": "Social Insurance Number (SIN) | UBC Student Services",
+        "host": "students.ubc.ca",
+        "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/"
       },
       "office": null,
-      "sources": [],
-      "applies_to_rules": [],
-      "confidence": 0.0,
-      "state": "no_source"
+      "sources": [
+        {
+          "organisation": "UBC",
+          "title": "Social Insurance Number (SIN) | UBC Student Services",
+          "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "UBC",
+          "title": "Social Insurance Number (SIN) | UBC Student Services",
+          "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "Apply online (recommended); apply by mail or request an in-person appointment only if you face barriers applying online",
+        "You can apply online from outside Canada if you hold a study or work permit, even without a Canadian mailing address",
+        "Contact the SIN Program if your application exceeds normal processing times by 5 days and you haven't received a letter",
+        "Students not eligible for a SIN, such as exchange students without a study permit, should apply for an Individual Tax Number (ITN) instead",
+        "If your permit has expired and a new one hasn't arrived, you can keep using the same SIN while in Canada on maintained status"
+      ],
+      "confidence": 0.605833931670417,
+      "state": "verified"
     },
     {
       "id": "apply-for-msp",
@@ -239,5 +264,5 @@
   ],
   "generated_at": "2026-09-24T07:26:51.503702Z",
   "reviewed_by": "product-owner",
-  "reviewed_at": "2026-09-24T07:26:51.503829Z"
+  "reviewed_at": "2026-09-24T08:22:02.526461Z"
 }
