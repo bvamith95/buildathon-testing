@@ -18,14 +18,12 @@ Four workstreams run in parallel, mapped directly onto the architecture's contai
 | Data/Analytics | Engineering | Guide store schema, feedback API, event pipe |
 | Product ops | Product owner (you) | Nightly review sign-off (ongoing from week 1), reminder sending domain, housing link verification, product name decision |
 
-## Two blockers to clear before week 2 build starts
+## Two blockers cleared before week 2 build starts
 
-Per `docs/decisions.md`, "Still open":
+Both resolved 2026-09-24 (see `docs/decisions.md`):
 
-1. **Product name.** Blocks week 2 copy across Landing, Intake, and every step card template. Needs a decision by end of week 1.
-2. **Interim behavior for an unmatched bucket signature.** Blocks the Resolving and Timeline screens (`architecture.md` §4–5), which need a defined response for a signature outside the initial generated set, not just the long-run "expand the set" answer. Needs a decision by end of week 1 alongside the taxonomy freeze, since it's a guide-level state that has to be designed and built in week 2/3, not discovered later.
-
-Everything below assumes both are resolved on schedule; if not, they become week 1 carry-over risks (added to the risk table at the end).
+1. **Product name.** Resolved: **Una**, tagline "una for uni" for now.
+2. **Interim behavior for an unmatched bucket signature.** Resolved: serve the nearest existing published guide (same `program_level`, matched on bucket dimensions weighted by which ones gate whole steps vs. just wording), tagged with a visible approximate-match banner. Algorithm spec in `architecture.md`, "Decisions resolved 2026-09-24" item 5.
 
 ## Week 1 — Foundations
 
@@ -57,9 +55,9 @@ Everything below assumes both are resolved on schedule; if not, they become week
 - [ ] Confirm store can be a flat/static JSON-per-signature structure behind a CDN at this scale (`architecture.md` §8) — no need for a database server
 
 ### Product ops
-- [ ] **Decide product name** (blocks week 2 copy)
-- [ ] **Decide interim unmatched-signature behavior** (blocks week 2 client build)
-- [ ] Sign off the week 1 pilot bucket review
+- [x] **Decide product name** — resolved: Una, "una for uni"
+- [x] **Decide interim unmatched-signature behavior** — resolved: nearest-match + approximate-match banner (see `architecture.md`)
+- [x] Sign off the week 1 pilot bucket review
 - [ ] Start sourcing the reminder-email sending domain + unsubscribe mechanism (parallel track, due end of week 3)
 
 ## Week 2 — All variants, real screens
@@ -76,7 +74,7 @@ Everything below assumes both are resolved on schedule; if not, they become week
 - [ ] Intake screen: citizenship searchable combobox (alternate-name matching), arrival-date picker with "I have not booked a flight yet" substitution + estimate flagging, privacy line, no free-text date field
 - [ ] Resolving screen: phase skeleton paints immediately, status line names the actual country
 - [ ] Timeline screen: profile chip with edit, pinned next-up card, progress count, phase accordions (current open, others collapsed), post-arrival variant (collapsed review strip + opens on current week)
-- [ ] Guide-level "approximate match" or "we're adding your exact situation" state for an unmatched bucket signature, per the week 1 decision
+- [ ] Guide-level "approximate match" state for an unmatched bucket signature: nearest-match lookup + banner, per the algorithm in `architecture.md`, "Decisions resolved 2026-09-24" item 5
 - [ ] `guide_generated` event fires with `{profile_hash, content_version, latency_ms}`; confirm `profile_hash` is salted with `session_id` at the point of generation, not added later in week 4
 
 ### Data/Analytics
@@ -174,7 +172,6 @@ gantt
 
 | Risk | Impact if it slips | Mitigation |
 | --- | --- | --- |
-| Product name / unmatched-signature decisions not made by end of week 1 | Week 2 client screens (copy, Resolving/Timeline states) block | Both are 2-day-max decisions already scoped in `decisions.md`; treat as a week 1 exit gate, same as the taxonomy freeze |
 | Per-bucket confidence cutoff tuning (week 1 pilot → week 2 full generation) takes longer than expected | Week 2's "all twelve variants reviewed" done-criterion slips | Week 1's pilot bucket is deliberately the forcing function — if tuning isn't converged by end of week 1, escalate before starting week 2 generation rather than generating against an untuned threshold |
 | Reminder sending domain unresolved by week 3 | Reminder feature cut per existing plan | Opt-in UI is built regardless (week 3); only the send-side is at risk, so the cut is cheap and doesn't touch other screens |
 | Housing links go stale before the demo | Product owner disclaims but demo shows a dead/wrong link | Verify both links again during week 4 content freeze, not just once at the start |
