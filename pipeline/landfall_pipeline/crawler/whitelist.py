@@ -1,12 +1,24 @@
 """The whitelist: the only pages the crawler may ever fetch.
 
 docs/architecture.md: "Strictly the whitelisted domains, no crawling
-outward." docs/decisions.md froze the taxonomy but a specific page list
-still needs to be drafted and confirmed by the product owner before the
-Week 1 pilot bucket run (see docs/implementation-plan.md, Week 1).
+outward." docs/decisions.md froze the taxonomy; this is a researched draft
+of the specific page list, compiled 2026-09-24 — it still needs
+product-owner sign-off before the Week 1 pilot bucket run (see
+docs/implementation-plan.md, Week 1), since URLs can move and this hasn't
+been cross-checked against anyone at UBC/IRCC/BC/Service Canada.
 
-TODO(week 1, blocking pilot run): replace this placeholder with the
-confirmed list of specific official pages per bucket dimension.
+Naming note: the PRD/architecture docs call the fourth org "CRA," but the
+actual SIN-application pages below are published by Service Canada (part
+of ESDC), not the Canada Revenue Agency — they're tagged `organisation=
+"Service Canada"` accordingly, since that's what should show in the
+source citation a user sees. Genuine CRA content (tax residency/filing)
+is a separate pair of entries below, tagged "CRA". Worth a decision on
+whether to correct "CRA" to "Service Canada" in prd.md/architecture.md's
+org list, or keep it as shorthand for the whitelist boundary while the
+per-page citation stays accurate regardless.
+
+TODO(week 1, blocking pilot run): product owner to confirm these URLs are
+current and correctly scoped before the pilot run uses them.
 """
 
 from dataclasses import dataclass
@@ -31,9 +43,126 @@ class WhitelistEntry:
     None for general content not tied to a single dimension."""
 
 
-# Placeholder seed list — NOT yet confirmed. Do not run a real pipeline
-# pass against this without product-owner sign-off on the URLs.
-WHITELIST: list[WhitelistEntry] = []
+# Researched draft — NOT yet confirmed. Do not run a real pipeline pass
+# against this without product-owner sign-off on the URLs (see module
+# docstring above).
+WHITELIST: list[WhitelistEntry] = [
+    # --- IRCC: study permit, biometrics, medical exam, port of entry ---
+    WhitelistEntry(
+        url="https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html",
+        organisation="IRCC",
+        bucket_dimension="entry_document",
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/apply.html",
+        organisation="IRCC",
+        bucket_dimension="entry_document",
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/immigration-refugees-citizenship/services/biometrics.html",
+        organisation="IRCC",
+        bucket_dimension="biometrics",
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals/standard-requirements/medical-requirements/exam/who-may-perform-immigration-medical-examination.html",
+        organisation="IRCC",
+        bucket_dimension="medical_exam",
+    ),
+    WhitelistEntry(
+        url="https://ircc.canada.ca/english/helpcentre/answer.asp?qnum=184&top=17",
+        organisation="IRCC",
+        bucket_dimension="medical_exam",
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/prepare-arrival.html",
+        organisation="IRCC",
+        bucket_dimension=None,  # landing day / port of entry
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/after-apply-next-steps.html",
+        organisation="IRCC",
+        bucket_dimension=None,
+    ),
+    # --- UBC: tuition, SIN (payroll angle), health insurance, dates ---
+    WhitelistEntry(
+        url="https://students.ubc.ca/finances/tuition-fees/paying-tuition/",
+        organisation="UBC",
+        bucket_dimension="currency_corridor",
+    ),
+    WhitelistEntry(
+        url="https://you.ubc.ca/financial-planning/financial-schedule/",
+        organisation="UBC",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://students.ubc.ca/finances/taxes/social-insurance-number-sin/",
+        organisation="UBC",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://students.ubc.ca/health/health-insurance/health-insurance-international/",
+        organisation="UBC",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://students.ubc.ca/health/health-insurance/health-insurance-international/medical-services-plan-msp-international/",
+        organisation="UBC",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://students.ubc.ca/health/health-insurance/health-insurance-international/medical-services-plan-msp-international/apply-bc-medical-services-plan-msp/",
+        organisation="UBC",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://students.ubc.ca/enrolment/dates-deadlines/",
+        organisation="UBC",
+        bucket_dimension=None,
+    ),
+    # --- Government of BC: MSP (provincial health coverage) ---
+    WhitelistEntry(
+        url="https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/how-to-enrol",
+        organisation="Government of BC",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/are-you-eligible",
+        organisation="Government of BC",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/apply-for-msp",
+        organisation="Government of BC",
+        bucket_dimension=None,
+    ),
+    # --- Service Canada (ESDC): SIN applications — see naming note above ---
+    WhitelistEntry(
+        url="https://www.canada.ca/en/employment-social-development/services/sin.html",
+        organisation="Service Canada",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/employment-social-development/services/sin/apply.html",
+        organisation="Service Canada",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/employment-social-development/services/sin/required-documents.html",
+        organisation="Service Canada",
+        bucket_dimension=None,
+    ),
+    # --- CRA proper: tax residency (genuinely CRA-published) ---
+    WhitelistEntry(
+        url="https://www.canada.ca/en/revenue-agency/services/tax/international-non-residents/individuals-leaving-entering-canada-non-residents/newcomers-canada-immigrants.html",
+        organisation="CRA",
+        bucket_dimension=None,
+    ),
+    WhitelistEntry(
+        url="https://www.canada.ca/en/revenue-agency/services/tax/international-non-residents/individuals-leaving-entering-canada-non-residents/international-students-studying-canada.html",
+        organisation="CRA",
+        bucket_dimension=None,
+    ),
+]
 
 
 def is_allowed(url: str) -> bool:
