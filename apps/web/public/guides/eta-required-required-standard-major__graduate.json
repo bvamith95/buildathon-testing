@@ -1,0 +1,367 @@
+{
+  "content_version": 2,
+  "program_level": "graduate",
+  "bucket_signature": "eta-required-required-standard-major",
+  "steps": [
+    {
+      "id": "study-permit-apply",
+      "phase": "after_your_offer",
+      "offset_days": -90,
+      "title": "Apply online for your study permit (eTA issued automatically with approval)",
+      "why": "You need a study permit to study at UBC, and you apply online through an IRCC secure account, which you also use to pay your fees, submit the application and check its status. Because your citizenship is visa-exempt, you do not apply separately or pay another fee for the electronic travel authorization (eTA) \u2014 IRCC sends it along with your approval. If approved from outside Canada, you'll receive a port of entry letter of introduction (this is not your study permit) that includes your eTA information; the eTA is linked to the passport you used to apply and is valid for 5 years or until that passport expires, whichever comes first. You must travel with that same passport, and show the letter of introduction to a border services officer to get your permit at the port of entry.",
+      "prerequisites": [
+        "Valid passport or travel document \u2014 use the same one you will travel with, since the eTA is linked to it",
+        "Copy of your valid UBC letter of acceptance",
+        "An IRCC secure account (to pay fees, submit the application and check status)",
+        "A scanner or camera to make electronic copies of your documents",
+        "A valid credit or debit card (Canadian bank INTERAC\u00ae Online registered for online banking, or any Visa Debit card; the card does not have to be in your name)",
+        "Your local visa office instructions for the country/territory you're applying from",
+        "Proof of enough money for your stay, good health, and no criminal or immigration-related convictions",
+        "Any letters of reference or other documents the visa office tells you to bring"
+      ],
+      "cost": "Study permit application fee paid online by credit or debit card; no separate fee for the eTA (it is issued with your study permit approval)",
+      "time_estimate": null,
+      "where": {
+        "label": "Study permit: After you apply - Canada.ca",
+        "host": "www.canada.ca",
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/after-apply-next-steps.html"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "IRCC",
+          "title": "Study permit: After you apply - Canada.ca",
+          "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/after-apply-next-steps.html",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "IRCC",
+          "title": "Study permit: How to apply - Canada.ca",
+          "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/apply.html",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "Visa-exempt citizenship: eTA issued with study permit approval rather than a temporary resident visa",
+        "Applying online from outside Canada",
+        "Graduate (international) student at a Canadian institution"
+      ],
+      "confidence": 0.5666261924454457,
+      "state": "verified"
+    },
+    {
+      "id": "book-biometrics",
+      "phase": "after_your_offer",
+      "offset_days": -75,
+      "title": "Book and give your biometrics (fingerprints and photo) within 30 days",
+      "why": "IRCC collects biometrics to confirm your identity and help assess your study permit application. After you submit your application, you'll receive a biometrics instruction letter \u2014 you have 30 days from that letter to give your fingerprints and photo, and booking your appointment as soon as you can avoids processing delays. Biometrics are valid for 10 years, making repeat trips to Canada easier.",
+      "prerequisites": [
+        "Submitted your online study permit application (with letter of acceptance and PAL/TAL)",
+        "Paid the biometrics fee at the time you submitted your application",
+        "Received the biometrics instruction letter from IRCC",
+        "Are between 14 and 79 years old and not otherwise exempt (e.g., already gave biometrics for a permanent resident application still in processing)"
+      ],
+      "cost": "CAN$85 per applicant; maximum CAN$170 total for families applying at the same time (spouse/common-law partner and dependent children)",
+      "time_estimate": "Book immediately upon receiving the letter; must be completed within 30 days",
+      "where": {
+        "label": "Study permit: After you apply - Canada.ca",
+        "host": "www.canada.ca",
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/after-apply-next-steps.html"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "IRCC",
+          "title": "Study permit: After you apply - Canada.ca",
+          "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/after-apply-next-steps.html",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "IRCC",
+          "title": "Study permit: How to apply - Canada.ca",
+          "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/apply.html",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "Applies to most study permit applicants aged 14\u201379 applying for temporary residence",
+        "Exempt: Canadian citizens, permanent residents, children under 14, applicants over 79, holders of diplomatic/official visas, and applicants who already gave biometrics for a permanent resident application still being processed",
+        "The biometrics fee must be paid when you submit your application, or you may experience delays"
+      ],
+      "confidence": 0.6705875227970154,
+      "state": "verified"
+    },
+    {
+      "id": "immigration-medical-exam",
+      "phase": "preparing_to_move",
+      "offset_days": -45,
+      "title": "Book and complete your immigration medical exam with an IRCC panel physician",
+      "why": "Only a physician authorized by Immigration, Refugees and Citizenship Canada (IRCC) can perform an immigration medical exam (IME) \u2014 you cannot use your family doctor unless their name appears on IRCC's panel physician list. Being in good health is one of the requirements an immigration officer checks, so completing the IME with the right doctor keeps your study permit application moving and avoids having to redo the exam with an approved physician.",
+      "prerequisites": [
+        "Study permit application started or submitted so you know which visa office is processing it",
+        "Valid passport or travel document to present at the appointment",
+        "IRCC's online list of panel physicians, used to find an authorized doctor in your area (you may choose a panel physician anywhere in the world)",
+        "Ability to tell the panel physician where your application is being processed, so results are sent to the correct office"
+      ],
+      "cost": "Paid by you directly to the physician; the fee varies from one panel physician to another",
+      "time_estimate": "Book as early as possible before travel \u2014 appointment availability and the time for results to reach the visa office vary by physician and location",
+      "where": {
+        "label": "How can I find a doctor who can provide the medical exam I need to come to Canada?",
+        "host": "ircc.canada.ca",
+        "url": "https://ircc.canada.ca/english/helpcentre/answer.asp?qnum=184&top=17"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "IRCC",
+          "title": "How can I find a doctor who can provide the medical exam I need to come to Canada?",
+          "url": "https://ircc.canada.ca/english/helpcentre/answer.asp?qnum=184&top=17",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "IRCC",
+          "title": "Study permit: Prepare for arrival - Canada.ca",
+          "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/prepare-arrival.html",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "Applies to admitted international students applying for a study permit from outside Canada who are asked to complete an immigration medical exam",
+        "In exceptional circumstances where an applicant in Canada cannot reasonably access a panel physician, IRCC's Migration Health Branch may temporarily authorize a non-panel physician (dispensation)"
+      ],
+      "confidence": 0.6037441855066082,
+      "state": "verified"
+    },
+    {
+      "id": "tuition-transfer",
+      "phase": "preparing_to_move",
+      "offset_days": -30,
+      "title": "Pay your UBC tuition and fees by international transfer",
+      "why": "Your assessed tuition and student fees appear under \"Finances\" in Workday, and Term 1 Winter Session tuition is due September 9, 2026 (Term 2 instalments follow later in the academic year). Because you are paying from outside Canada through a major currency corridor, a standard bank wire or transfer service is straightforward, but you should still initiate it several business days ahead so funds land in your UBC account before the deadline and you avoid late penalties.",
+      "prerequisites": [
+        "Accepted your offer of admission and paid the acceptance deposit online through the Applicant Service Centre ($3,000 for students on a study permit)",
+        "Registered for courses so your fees are assessed and visible under \"Finances\" in Workday",
+        "Standard proof-of-funds documentation prepared for your study permit application",
+        "Access to your home bank account or an international funds transfer service, plus your UBC student number"
+      ],
+      "cost": "Tuition and student fees as assessed in Workday (use the UBC cost estimator for a pre-assessment estimate), plus your bank's or transfer provider's wire fee and exchange-rate margin. Separately, international students are charged a temporary iMED medical insurance fee of $237 ($338 for one-term exchange students) plus a $10.54 direct billing fee when they register for courses.",
+      "time_estimate": "30\u201360 minutes to set up the transfer; allow several business days for funds to arrive and post before the September 9, 2026 Term 1 deadline",
+      "where": {
+        "label": "UBC Financial Schedule | UBC Undergraduate Programs and Admissions",
+        "host": "you.ubc.ca",
+        "url": "https://you.ubc.ca/financial-planning/financial-schedule/"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "UBC",
+          "title": "UBC Financial Schedule | UBC Undergraduate Programs and Admissions",
+          "url": "https://you.ubc.ca/financial-planning/financial-schedule/",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "UBC",
+          "title": "UBC Financial Schedule | UBC Undergraduate Programs and Admissions",
+          "url": "https://you.ubc.ca/financial-planning/financial-schedule/",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "Term 1 Winter Session tuition fees due September 9, 2026",
+        "Fees assessed and viewable under \"Finances\" in Workday",
+        "Acceptance deposit of $3,000 for students on a study permit, paid via the Applicant Service Centre",
+        "iMED insurance fee charged to your account upon course registration (June 1, 2026 onward)"
+      ],
+      "confidence": 0.506255475012824,
+      "state": "verified"
+    },
+    {
+      "id": "port-of-entry",
+      "phase": "landing_day",
+      "offset_days": 0,
+      "title": "Prepare your port-of-entry document pack before you fly",
+      "why": "Your study permit is issued at the border, not before you travel. A border services officer will confirm you meet basic entry requirements, so you must have the right documents in your carry-on (not checked baggage) and be ready to answer questions. If you have an eTA, there is no sticker in your passport \u2014 it is linked electronically to the passport you used to apply, so you must travel with that same passport.",
+      "prerequisites": [
+        "Approved study permit application with a port of entry letter of introduction (this letter is not your study permit; it contains your permit reference number)",
+        "The same valid passport/travel document you used to apply for your study permit \u2014 your eTA is linked to it and is valid 5 years or until the passport expires, whichever comes first",
+        "A copy of your valid letter of acceptance from your designated learning institution (an updated LOA if you deferred your enrolment)",
+        "Letters of reference or any other documents the visa office told you to bring",
+        "A valid visitor visa in your passport instead of an eTA, if you are from a visa-required country (you must enter Canada before it expires)",
+        "If you are a lawful permanent resident of the US: a valid green card (or equivalent proof of US status) plus a valid passport from your country of nationality",
+        "Proof of enough money for your stay (the amount varies with length of stay and whether you stay in a hotel or with friends/relatives)",
+        "Be in good health, with no criminal or immigration-related convictions, and be able to satisfy the officer about your ties to your home country and that you will leave Canada at the end of your stay"
+      ],
+      "cost": null,
+      "time_estimate": "1-2 hours to assemble documents; allow extra time at the airport for border processing",
+      "where": {
+        "label": "Study permit: Prepare for arrival - Canada.ca",
+        "host": "www.canada.ca",
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/prepare-arrival.html"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "IRCC",
+          "title": "Study permit: Prepare for arrival - Canada.ca",
+          "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/prepare-arrival.html",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "IRCC",
+          "title": "Study permit: After you apply - Canada.ca",
+          "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/after-apply-next-steps.html",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "Study permit holders arriving from outside Canada",
+        "eTA holders (no visa sticker \u2014 eTA is electronically linked to the passport used in the study permit application)",
+        "Visa-required nationals (visitor visa is placed in the passport)",
+        "US lawful permanent residents"
+      ],
+      "confidence": 0.7072375027151259,
+      "state": "verified"
+    },
+    {
+      "id": "apply-for-sin",
+      "phase": "first_two_weeks",
+      "offset_days": 3,
+      "title": "Apply for your Social Insurance Number (SIN) online",
+      "why": "You need a SIN to start working in Canada, file taxes, and provide to UBC for tax purposes \u2014 essential if you'll be paid as a teaching or research assistant. Online applications may take up to 5 business days, so applying right after arrival avoids payroll delays.",
+      "prerequisites": [
+        "Arrive in Canada and receive your study permit at the airport or border crossing (you can only get a SIN after arriving)",
+        "Check that your study permit lists a work condition, e.g. \"May accept employment on or off campus if meeting eligibility criteria, per paragraph R186(f), (v) or (w)...\", \"May work 24 hours per week off campus or full time during regular breaks...\", or \"May accept employment on the campus of the institution at which registered in full-time studies\"",
+        "If your permit has no work conditions, apply to change your study permit conditions first and apply for a SIN once the new permit is issued",
+        "Have a copy of your study or work permit and your passport ready; documents not in English or French must be translated"
+      ],
+      "cost": null,
+      "time_estimate": "Online: up to 5 business days; by mail: up to 20 business days; in person: SIN issued during your visit",
+      "where": {
+        "label": "Social Insurance Number (SIN) | UBC Student Services",
+        "host": "students.ubc.ca",
+        "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "UBC",
+          "title": "Social Insurance Number (SIN) | UBC Student Services",
+          "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "UBC",
+          "title": "Social Insurance Number (SIN) | UBC Student Services",
+          "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "SIN is a 9-digit number issued by Service Canada; international students receive a SIN starting with \"9\" indicating temporary resident status",
+        "Having a SIN alone is not enough to work in Canada \u2014 you must also be eligible to work",
+        "Apply online (recommended); apply by mail or request an in-person appointment if you face barriers applying online",
+        "If outside Canada with a study or work permit, you can still apply online even without a Canadian mailing address",
+        "Work must be insurable employment \u2014 work under an employer in Canada who controls your wages, hours, and tasks",
+        "Add your SIN (or ITN) in Workday for UBC tax purposes",
+        "If processing exceeds normal times by 5 days with no letter received, contact the SIN Program",
+        "Protect your SIN as sensitive personal information and beware of fraudulent calls or emails requesting it",
+        "Students not eligible for a SIN, such as exchange students without a study permit, can apply for an Individual Tax Number (ITN) instead"
+      ],
+      "confidence": 0.605833931670417,
+      "state": "verified"
+    },
+    {
+      "id": "apply-for-msp",
+      "phase": "first_two_weeks",
+      "offset_days": 7,
+      "title": "Apply for MSP right after you land in B.C. \u2014 and buy private insurance for the 3-month wait",
+      "why": "All people residing in B.C. must enrol in the Medical Services Plan (MSP) to access provincial health benefits like doctor visits. If you are new to Canada, apply as soon as you arrive: coverage may only start three months after your arrival date in British Columbia (the balance of the month you establish residence, plus two months). Because you are not covered during that wait period, the Province advises getting private health care insurance to bridge the gap. UBC's financial schedule confirms that, if you have no other medical coverage, B.C. law requires you to register for MSP \u2014 an August arrival typically becomes eligible around November. Apply online (fastest), in person or by mail; after enrolment you receive a Personal Health Number (PHN) via the B.C. Services Card process. Note: MSP coverage depends on residency \u2014 if you leave B.C. within 6 months of enrolling, you may have to repay your medical expenses. The provided sources do not name the specific UBC office that handles graduate student health insurance enrolment, so confirm that directly with UBC.",
+      "prerequisites": [
+        "Arrival in British Columbia (your arrival date starts the wait period)",
+        "Identity/immigration documents to meet MSP ID requirements (e.g., study permit)",
+        "Interim private health insurance arranged to cover the ~3-month wait period",
+        "A B.C. mailing address for your application and B.C. Services Card / PHN"
+      ],
+      "cost": "MSP premiums: $0 for Canadian citizens and permanent residents; $75/month for students on a study permit. Private interim insurance is an additional cost (amount not specified in sources).",
+      "time_estimate": "Apply online as soon as you arrive (single online application); coverage may begin about three months after your B.C. arrival date",
+      "where": {
+        "label": "Apply for MSP - Province of British Columbia",
+        "host": "www2.gov.bc.ca",
+        "url": "https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/apply-for-msp"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "Government of BC",
+          "title": "Apply for MSP - Province of British Columbia",
+          "url": "https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/apply-for-msp",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "Government of BC",
+          "title": "How to apply for the Medical Services Plan (MSP) - Province of British Columbia",
+          "url": "https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/how-to-enrol",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "New to Canada / new B.C. resident",
+        "International student on a study permit",
+        "Graduate student arriving in B.C. without other medical coverage",
+        "Family members apply separately \u2014 each person's wait period starts on their own arrival date",
+        "Wait period waived for eligible arrivals from Ukraine under CUAET"
+      ],
+      "confidence": 0.6112244811388811,
+      "state": "verified"
+    },
+    {
+      "id": "check-msp-status",
+      "phase": "weeks_three_and_four",
+      "offset_days": 20,
+      "title": "Check your MSP application status and plan for the 3-month wait period",
+      "why": "All people residing in B.C. must enrol in the Medical Services Plan (MSP) to access provincial health benefits like doctor visits. If you're new to Canada, coverage doesn't start immediately: new residents may be eligible only after a wait period consisting of the balance of the month in which residence is established, plus two months \u2014 so coverage may start about three months after your arrival date in B.C. Confirming your application is progressing and keeping private health insurance in place for the wait period prevents uncapped medical bills in your first months in Vancouver. Completing enrolment also gets you your B.C. Services Card and Personal Health Number (PHN).",
+      "prerequisites": [
+        "MSP Application for Enrolment already submitted (online, in person, or by mail)",
+        "Arrival date in B.C. recorded, since the wait period is calculated from when residence is established",
+        "ID documents used in your application available for reference",
+        "Private health care insurance arranged to cover you during the wait period"
+      ],
+      "cost": "No cost to apply for or follow up on MSP enrolment; you will need to pay for private health insurance covering the wait period",
+      "time_estimate": "15\u201330 minutes to follow up; coverage may not begin until roughly three months after your arrival date in B.C.",
+      "where": {
+        "label": "How to apply for the Medical Services Plan (MSP) - Province of British Columbia",
+        "host": "www2.gov.bc.ca",
+        "url": "https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/how-to-enrol"
+      },
+      "office": null,
+      "sources": [
+        {
+          "organisation": "Government of BC",
+          "title": "How to apply for the Medical Services Plan (MSP) - Province of British Columbia",
+          "url": "https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/how-to-enrol",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "Government of BC",
+          "title": "Apply for MSP - Province of British Columbia",
+          "url": "https://www2.gov.bc.ca/gov/content/health/health-drug-coverage/msp/bc-residents/eligibility-and-enrolment/apply-for-msp",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "If you are new to Canada, apply for MSP as soon as you arrive and get private health care insurance while you wait",
+        "If you moved from another Canadian province, arrange coverage with your former provincial medical plan during the wait period",
+        "If family members arrive later, apply to add them once they arrive \u2014 each person's wait period begins on their individual arrival date, and they must keep their existing provincial health care until then",
+        "If your MSP coverage will be under an employer, union, or pension group plan, contact your group administrator instead of applying separately",
+        "If you already have MSP coverage and received a letter to renew your B.C. Services Card, do not submit a new application \u2014 just follow the renewal instructions in the letter",
+        "If you arrived from Ukraine under CUAET as a returning Canadian, permanent resident, or deemed resident, the 3-month wait period is waived",
+        "If you leave B.C. within 6 months of enrolling in MSP, you may have to repay your medical expenses"
+      ],
+      "confidence": 0.6443711079720515,
+      "state": "verified"
+    }
+  ],
+  "generated_at": "2026-09-24T07:45:32.937772Z",
+  "reviewed_by": "product-owner",
+  "reviewed_at": "2026-09-24T08:23:05.734349Z"
+}

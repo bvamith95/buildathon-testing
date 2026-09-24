@@ -1,17 +1,17 @@
-# Landfall — Architecture Document
+# Una — Architecture Document
 
 Companion to `docs/prd.md`. This expands the PRD's "Architecture and content pipeline" section into a full system design: components, data flow, data model, and the operational questions the PRD leaves open (see `docs/prd-review.md` items 1–4). Nothing here overrides a PRD decision; it makes the mechanics behind those decisions concrete enough to build against.
 
 ## 1. System context
 
-Landfall has two active users (the student, and the human reviewer who gates content) and four passive data sources it reads but never writes to.
+Una has two active users (the student, and the human reviewer who gates content) and four passive data sources it reads but never writes to.
 
 ```mermaid
 flowchart TB
   Student["Student<br/>(mobile during the move,<br/>desktop for forms)"]
   Reviewer["Content reviewer<br/>(signs off changed steps)"]
 
-  Landfall(["Landfall<br/>personalised, source-cited<br/>onboarding checklist"])
+  Una(["Una<br/>personalised, source-cited<br/>onboarding checklist"])
 
   UBC["UBC sites<br/>tuition, health plan,<br/>SIN-for-payroll, offices"]
   IRCC["IRCC<br/>permit, biometrics, medical exam"]
@@ -19,16 +19,16 @@ flowchart TB
   CRA["Service Canada / CRA<br/>SIN, tax residency basics"]
   Email["Transactional email provider<br/>(post-MVP)"]
 
-  Student -->|"level, citizenship,<br/>arrival date, feedback"| Landfall
-  Reviewer -->|"reviews + approves publish"| Landfall
-  Landfall -->|"nightly crawl,<br/>whitelisted pages only"| UBC
-  Landfall -->|"nightly crawl,<br/>whitelisted pages only"| IRCC
-  Landfall -->|"nightly crawl,<br/>whitelisted pages only"| BC
-  Landfall -->|"nightly crawl,<br/>whitelisted pages only"| CRA
-  Landfall -.->|"sends reminders<br/>on opt-in (post-MVP)"| Email
+  Student -->|"level, citizenship,<br/>arrival date, feedback"| Una
+  Reviewer -->|"reviews + approves publish"| Una
+  Una -->|"nightly crawl,<br/>whitelisted pages only"| UBC
+  Una -->|"nightly crawl,<br/>whitelisted pages only"| IRCC
+  Una -->|"nightly crawl,<br/>whitelisted pages only"| BC
+  Una -->|"nightly crawl,<br/>whitelisted pages only"| CRA
+  Una -.->|"sends reminders<br/>on opt-in (post-MVP)"| Email
 ```
 
-Two things this diagram is meant to make obvious: the crawl direction is strictly one-way (Landfall reads the whitelist; nothing the four sources do reaches a user without passing through generation, diff, and human review first), and the reviewer is a first-class actor, not a background process — the architecture doesn't work without someone in that role.
+Two things this diagram is meant to make obvious: the crawl direction is strictly one-way (Una reads the whitelist; nothing the four sources do reaches a user without passing through generation, diff, and human review first), and the reviewer is a first-class actor, not a background process — the architecture doesn't work without someone in that role.
 
 ## 2. Containers
 
@@ -303,7 +303,14 @@ The four open items originally listed here are now decided with the product owne
 3. **Unmatched bucket signature:** treated as a taxonomy-coverage signal. An observed real signature outside the initial ~6 gets added to the generated set through the normal pipeline (generate → diff → review → publish), rather than permanently served from a "closest match" or "not covered" state.
 4. **Crawl-failure alerting:** 3 consecutive failed crawls on the same source now alert the review owner alongside the nightly review queue.
 
+## Decisions resolved 2026-09-24
+
+5. **Interim behavior for an unmatched bucket signature** (the gap between a signature first being observed and the next reviewed publish that adds it, per decision 3 above): serve the nearest existing published guide for the same `program_level`, with a visible "your exact situation isn't covered yet — showing the closest match" banner at the guide level. Never render nothing.
+
+   **Nearest-match algorithm.** Only candidates with the same `program_level` are considered (graduate/undergraduate guides aren't interchangeable — level changes the finance/health tracks). Score each candidate by comparing the 5 bucket dimensions against the target signature in priority order — `entry_document` (16) > `biometrics` (8) > `medical_exam` (4) > `funds_evidence` (2) > `currency_corridor` (1) — summing the weight for each dimension that matches; earlier dimensions are weighted higher because they gate whether whole steps exist (e.g. a biometrics step appearing or not), while the later two mostly change wording/amounts inside steps that exist either way. Highest total score wins; ties break on the lexicographically first `bucket_signature` string, for determinism. This is a client-side lookup among already-published static guides — no backend call, consistent with the online request path in §4.
+
+   This state resolves itself automatically over time: once the taxonomy-expansion pipeline publishes the exact signature, later visits (and the pinned URL, since `bucket_signature` is derived the same way every time) pick up the real match with no client-side change needed.
+
 ## Still open
 
-- **Interim behavior for an unmatched bucket signature.** Decision 3 above says the *long-run* answer is "expand the generated set," but expansion requires a full pipeline cycle (crawl → generate → review → publish) — it isn't instant. Between a signature first being observed and the next reviewed publish that adds it, the online request path (§4–5) still needs *some* rendered response. This needs a decision before week 2, since the timeline/resolving screens can't be built against an undefined state. Candidates: temporarily serve the nearest existing variant with a visible approximate-match tag, or a guide-level "we're adding your exact situation, here's the closest one for now" state — either is a small addition to the guide-level state set already defined in the PRD's content-states section.
-- **Product name.** Still "Landfall" as a placeholder; blocks week 2 copy per `docs/decisions.md`.
+None currently.

@@ -1,4 +1,4 @@
-# Landfall PRD — UBC international student onboarding
+# Una PRD — UBC international student onboarding
 
 Last updated 2026-09-20 · Draft for team review
 
@@ -292,7 +292,7 @@ Resolved 2026-09-20 with the product owner — see `docs/decisions.md` for full 
 - [x] **Approve the pre-generated architecture.** Approved as written. Live generation stays a post-MVP option, not revisited for this build.
 - [x] **Name the review owner.** Product owner is the review owner and also receives crawl-failure alerts.
 - [x] **Freeze the bucket taxonomy.** Five buckets stand. Coverage of signatures outside the initial ~6 generated variants is handled by expanding the generated set through the normal pipeline, not by reopening the taxonomy (see `docs/decisions.md`).
-- [ ] **Decide the product name.** Landfall remains a placeholder. Still open — blocks week 2 copy.
+- [x] **Decide the product name.** Resolved: **Una**, tagline "una for uni" for now. See `docs/decisions.md`.
 - [x] **Set the recheck window.** 30 days for immigration, 90 for the rest, as suggested.
 - [x] **Confirm the metric denominators.** Level tap as the completion start; silent users excluded from helpful rate (tracked separately).
 - [x] **Decide on a not-applicable state.** Adding it. Steps get done / not done / not applicable.

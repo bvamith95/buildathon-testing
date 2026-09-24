@@ -1,4 +1,4 @@
-# PRD Review — Landfall (UBC international student onboarding)
+# PRD Review — Una (UBC international student onboarding)
 
 Reviewing `docs/prd.md`, last updated 2026-09-20. This is feedback for the team, organized by what blocks the build versus what can wait.
 

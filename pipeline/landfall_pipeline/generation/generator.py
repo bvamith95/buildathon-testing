@@ -70,6 +70,12 @@ class StepGenerator:
         top_chunk, confidence = matches[0]
         content = self._generate_content(claim_prompt, [m[0] for m in matches])
 
+        distinct_sources: dict[str, IndexedChunk] = {}
+        for m, _ in matches:
+            distinct_sources.setdefault(m.chunk.url, m)
+            if len(distinct_sources) == 2:
+                break
+
         return Step(
             id=step_id,
             phase=phase,
@@ -87,7 +93,7 @@ class StepGenerator:
                     url=m.chunk.url,
                     last_verified=m.chunk.fetched_at.date(),
                 )
-                for m, _ in matches[:2]
+                for m in distinct_sources.values()
             ],
             applies_to_rules=content.applies_to_rules,
             confidence=confidence,

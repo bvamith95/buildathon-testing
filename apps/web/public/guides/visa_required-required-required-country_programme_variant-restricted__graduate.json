@@ -1,5 +1,5 @@
 {
-  "content_version": 1,
+  "content_version": 2,
   "program_level": "graduate",
   "bucket_signature": "visa_required-required-required-country_programme_variant-restricted",
   "steps": [
@@ -228,21 +228,44 @@
       "id": "apply-for-sin",
       "phase": "first_two_weeks",
       "offset_days": 3,
-      "title": "Apply for a Social Insurance Number (SIN) as a new international graduate student who will work as a teaching or research assistant",
-      "why": "We could not verify the specifics for this step against our sources.",
-      "prerequisites": [],
+      "title": "Apply for your Social Insurance Number (SIN) online",
+      "why": "A SIN is a 9-digit number from Service Canada that you need to start working in Canada, to file taxes, and to access government programs and benefits. As a grad student hired as a TA or RA, you must also provide your SIN to UBC for tax purposes (add it in Workday) \u2014 online applications can take up to 5 business days, so applying right after arrival keeps payroll on track.",
+      "prerequisites": [
+        "Arrive in Canada and receive your study permit at the airport or border crossing \u2014 international students can only apply after arrival",
+        "Confirm your study permit lists a work condition, e.g. \"May accept employment on or off campus if meeting eligibility criteria, per paragraph R186(f), (v) or (w)...\", \"May work 24 hours per week off campus or full time during regular breaks...\", or \"May accept employment on the campus of the institution at which registered in full-time studies\" \u2014 if it doesn't, apply to change your study permit conditions first",
+        "Have a copy of your study or work permit and your passport ready; documents not in English or French must be translated",
+        "Confirm you are eligible to work in Canada \u2014 a SIN alone is not enough"
+      ],
       "cost": null,
-      "time_estimate": null,
+      "time_estimate": "Online applications may take up to 5 business days; by mail up to 20 business days; in person you receive the SIN during your visit",
       "where": {
-        "label": "Official source",
-        "host": "",
-        "url": ""
+        "label": "Social Insurance Number (SIN) | UBC Student Services",
+        "host": "students.ubc.ca",
+        "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/"
       },
       "office": null,
-      "sources": [],
-      "applies_to_rules": [],
-      "confidence": 0.0,
-      "state": "no_source"
+      "sources": [
+        {
+          "organisation": "UBC",
+          "title": "Social Insurance Number (SIN) | UBC Student Services",
+          "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/",
+          "last_verified": "2026-09-24"
+        },
+        {
+          "organisation": "UBC",
+          "title": "Social Insurance Number (SIN) | UBC Student Services",
+          "url": "https://students.ubc.ca/finances/taxes/social-insurance-number-sin/",
+          "last_verified": "2026-09-24"
+        }
+      ],
+      "applies_to_rules": [
+        "International students can only apply for a SIN after arriving in Canada and receiving a study permit",
+        "Study permit must carry one of the listed work conditions to be SIN-eligible",
+        "International students receive a SIN starting with \"9\", indicating temporary resident status",
+        "If processing exceeds normal times by 5 days and no letter arrives, contact the SIN Program"
+      ],
+      "confidence": 0.605833931670417,
+      "state": "verified"
     },
     {
       "id": "apply-for-msp",
@@ -335,5 +358,5 @@
   ],
   "generated_at": "2026-09-24T04:31:25.819690Z",
   "reviewed_by": "product-owner",
-  "reviewed_at": "2026-09-24T04:31:25.820058Z"
+  "reviewed_at": "2026-09-24T08:24:36.675017Z"
 }
