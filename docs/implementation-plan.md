@@ -32,7 +32,7 @@ Everything below assumes both are resolved on schedule; if not, they become week
 **Done means (PRD):** one bucket's content generated end to end and reviewed by a human.
 
 ### Pipeline
-- [ ] Whitelist crawler against the 4 confirmed domains (UBC, IRCC, BC, CRA), no crawling outward
+- [x] Whitelist crawler against the 4 confirmed domains (UBC, IRCC, BC, Service Canada/CRA), no crawling outward — 22 specific pages researched and product-owner signed off 2026-09-24, see `pipeline/landfall_pipeline/crawler/whitelist.py`
 - [ ] Chunker: attach `{url, title, organisation, fetched_at}` to every chunk; discard any chunk without full provenance
 - [ ] Retrieval index (embeddings) over chunks
 - [ ] Embedding-similarity confidence scoring wired into generation (baseline mechanism per `decisions.md`; per-bucket cutoff tuning happens after this week's pilot run, not before)

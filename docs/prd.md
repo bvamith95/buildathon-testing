@@ -150,7 +150,7 @@ The guide is looked up, not generated, at request time. Retrieval-augmented gene
 
 ```mermaid
 flowchart LR
-  W[Whitelist<br/>UBC, IRCC, BC, CRA] --> X[Crawl and chunk]
+  W[Whitelist<br/>UBC, IRCC, BC, Service Canada/CRA] --> X[Crawl and chunk]
   X --> Y[Generate variants]
   Y --> Z[Diff vs previous]
   Z --> R[Human review<br/>changed steps only]

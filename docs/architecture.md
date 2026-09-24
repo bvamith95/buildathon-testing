@@ -16,7 +16,7 @@ flowchart TB
   UBC["UBC sites<br/>tuition, health plan,<br/>SIN-for-payroll, offices"]
   IRCC["IRCC<br/>permit, biometrics, medical exam"]
   BC["BC government<br/>provincial health (MSP)"]
-  CRA["CRA<br/>SIN, tax residency basics"]
+  CRA["Service Canada / CRA<br/>SIN, tax residency basics"]
   Email["Transactional email provider<br/>(post-MVP)"]
 
   Student -->|"level, citizenship,<br/>arrival date, feedback"| Landfall

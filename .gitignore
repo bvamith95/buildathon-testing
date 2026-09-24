@@ -1,0 +1,13 @@
+# Python pipeline
+pipeline/.venv/
+pipeline/__pycache__/
+pipeline/**/__pycache__/
+pipeline/.pytest_cache/
+pipeline/data/*.json
+!pipeline/data/.gitkeep
+
+# Secrets — never commit real env files
+.env
+.env.local
+*.env
+!*.env.example
