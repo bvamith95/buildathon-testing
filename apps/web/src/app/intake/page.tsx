@@ -1,26 +1,139 @@
-import Link from "next/link";
+"use client";
 
-// Stub target for the Landing screen's program-level buttons. The real
-// Intake screen (citizenship combobox, arrival-date picker) is Week 2
-// client work — see docs/implementation-plan.md.
-export default function IntakePlaceholder() {
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { CitizenshipEntry, searchCitizenships } from "@/lib/buckets";
+
+const TODAY = new Date().toISOString().slice(0, 10);
+
+function IntakeForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const level = searchParams.get("level") === "undergraduate" ? "undergraduate" : "graduate";
+
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<CitizenshipEntry | null>(null);
+  const [arrivalDate, setArrivalDate] = useState("");
+  const [showResults, setShowResults] = useState(false);
+
+  const results = useMemo(() => searchCitizenships(query).slice(0, 8), [query]);
+  const canSubmit = selected !== null && arrivalDate.length > 0;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected || !arrivalDate) return;
+    const params = new URLSearchParams({
+      c: selected.code,
+      d: arrivalDate,
+      l: level === "undergraduate" ? "undergrad" : "grad",
+    });
+    router.push(`/guide?${params.toString()}`);
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-12 sm:px-8">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-          Intake screen coming next
-        </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          This is where you&apos;d tell us your citizenship and arrival date.
-          Not built yet — part of the Week 2 client work.
-        </p>
-        <Link
-          href="/"
-          className="text-sm font-medium text-zinc-900 underline underline-offset-2 dark:text-zinc-100"
-        >
-          Back to landing
-        </Link>
+      <main className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-12 sm:px-8">
+        <header className="flex flex-col gap-2">
+          <Link
+            href="/"
+            className="w-fit text-xs font-medium text-zinc-500 underline underline-offset-2 dark:text-zinc-400"
+          >
+            &larr; Back
+          </Link>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            A couple of quick questions
+          </h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            We use these to show you the right permit and biometrics steps —
+            nothing here is shared beyond building your checklist.
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="citizenship" className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+              What&apos;s your citizenship?
+            </label>
+            <div className="relative">
+              <input
+                id="citizenship"
+                type="text"
+                autoComplete="off"
+                value={selected ? selected.label : query}
+                onChange={(e) => {
+                  setSelected(null);
+                  setQuery(e.target.value);
+                  setShowResults(true);
+                }}
+                onFocus={() => setShowResults(true)}
+                placeholder="Start typing a country..."
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-hover dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              />
+              {showResults && !selected && query.trim().length > 0 && (
+                <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+                  {results.length === 0 && (
+                    <li className="px-3 py-2 text-sm text-zinc-500">No matches — we&apos;ll use general guidance instead.</li>
+                  )}
+                  {results.map((entry) => (
+                    <li key={entry.code}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelected(entry);
+                          setQuery("");
+                          setShowResults(false);
+                        }}
+                        className="block w-full px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                      >
+                        {entry.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {!selected && query.trim().length === 0 && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                Don&apos;t see your country? Pick the closest match — we&apos;ll flag anything that might not fully apply.
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="arrival" className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+              When do you land in Vancouver?
+            </label>
+            <input
+              id="arrival"
+              type="date"
+              min={TODAY}
+              value={arrivalDate}
+              onChange={(e) => setArrivalDate(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-hover dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            />
+            <p className="text-xs text-zinc-500 dark:text-zinc-500">
+              Your best guess is fine — you can change this later.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="rounded-xl border border-brand bg-brand px-6 py-3 text-base font-semibold text-brand-foreground transition hover:bg-brand-hover hover:border-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Build my checklist
+          </button>
+        </form>
       </main>
     </div>
+  );
+}
+
+export default function IntakePage() {
+  return (
+    <Suspense fallback={null}>
+      <IntakeForm />
+    </Suspense>
   );
 }
