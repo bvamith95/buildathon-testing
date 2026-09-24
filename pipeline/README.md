@@ -1,4 +1,4 @@
-# Landfall content pipeline
+# Una content pipeline
 
 The offline half of the architecture in `../docs/architecture.md` §2–§3:
 crawl the whitelist → chunk with provenance → embed → generate via RAG →

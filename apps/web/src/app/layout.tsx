@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Landfall",
+  title: "Una — una for uni",
   description:
     "A personalised, source-cited checklist for admitted UBC international students.",
 };

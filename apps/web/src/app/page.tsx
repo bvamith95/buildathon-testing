@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   CONTENT_LAST_CHECKED,
@@ -10,7 +11,19 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <main className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-12 sm:px-8">
-        <header className="flex flex-col gap-3">
+        <header className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/logo/una-wordmark.webp"
+              alt="Una"
+              width={100}
+              height={31}
+              priority
+            />
+            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              una for uni
+            </span>
+          </div>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             Everything you need to do before and after you land, in one place.
           </h1>
@@ -35,7 +48,7 @@ export default function Landing() {
                 key={item}
                 className="flex items-start gap-2 text-sm text-zinc-800 dark:text-zinc-200"
               >
-                <span aria-hidden className="mt-1 text-zinc-400">
+                <span aria-hidden className="mt-1 text-brand-hover dark:text-brand">
                   •
                 </span>
                 {item}
@@ -79,7 +92,7 @@ export default function Landing() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Link
               href="/intake?level=graduate"
-              className="rounded-xl border border-zinc-900 bg-zinc-900 px-6 py-5 text-center text-base font-semibold text-white transition hover:bg-zinc-700 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+              className="rounded-xl border border-brand bg-brand px-6 py-5 text-center text-base font-semibold text-brand-foreground transition hover:bg-brand-hover hover:border-brand-hover"
             >
               Graduate student
             </Link>

@@ -35,7 +35,7 @@ Both `.env.example` files (`apps/web/.env.example`, `pipeline/.env.example`) lis
 
 ## What's here
 
-All content lives under `docs/`, documenting the "Landfall" product (a personalised, source-cited onboarding checklist for admitted UBC international students, covering immigration and money tasks from offer acceptance to day 30 in Vancouver):
+All content lives under `docs/`, documenting the "Una" product (tagline "una for uni" for now — a personalised, source-cited onboarding checklist for admitted UBC international students, covering immigration and money tasks from offer acceptance to day 30 in Vancouver):
 
 - `docs/prd.md` — the product requirements document: problem, users, scope, success metrics, screens, personalisation model, content states, data model, non-functional requirements, and the 4-week build plan.
 - `docs/architecture.md` — the technical architecture: system context, containers, offline content-pipeline sequence, online request-path sequence, bucket-resolution logic, client state-resolution logic, data model (ER diagram), and deployment shape.

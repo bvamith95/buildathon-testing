@@ -1,4 +1,4 @@
-# Landfall — Implementation plan
+# Una — Implementation plan
 
 Turns the PRD's 4-week plan (`docs/prd.md`, "Four-week plan and risks") and the architecture (`docs/architecture.md`) into concrete workstreams and tasks, incorporating the resolved decisions in `docs/decisions.md`. Build starts 2026-09-20; demo target 2026-10-16.
 
@@ -140,7 +140,7 @@ Everything below assumes both are resolved on schedule; if not, they become week
 ```mermaid
 gantt
   dateFormat  YYYY-MM-DD
-  title Landfall build — 4 weeks (start 2026-09-20, demo 2026-10-16)
+  title Una build — 4 weeks (start 2026-09-20, demo 2026-10-16)
   axisFormat %b %d
 
   section Pipeline

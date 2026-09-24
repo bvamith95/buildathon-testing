@@ -3,11 +3,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Sampled directly from the Una logo files (apps/web/public/logo/) —
+     see docs/decisions.md item 13. Needs dark foreground text: ~13:1
+     contrast against near-black vs ~1.6:1 against white. Fixed across
+     light/dark mode since it's the brand swatch itself, not page chrome. */
+  --brand: #c6d531;
+  --brand-hover: #b3c02a;
+  --brand-foreground: #14170a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-foreground: var(--brand-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
