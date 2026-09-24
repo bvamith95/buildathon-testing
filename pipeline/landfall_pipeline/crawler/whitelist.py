@@ -1,24 +1,21 @@
 """The whitelist: the only pages the crawler may ever fetch.
 
 docs/architecture.md: "Strictly the whitelisted domains, no crawling
-outward." docs/decisions.md froze the taxonomy; this is a researched draft
-of the specific page list, compiled 2026-09-24 — it still needs
-product-owner sign-off before the Week 1 pilot bucket run (see
-docs/implementation-plan.md, Week 1), since URLs can move and this hasn't
-been cross-checked against anyone at UBC/IRCC/BC/Service Canada.
+outward." Researched 2026-09-24, product-owner signed off the same day
+(see docs/decisions.md) — all 22 URLs below are confirmed. Liveness was
+not verified from this sandbox (network policy blocks outbound requests
+to all four domains); re-check reachability the first time this runs
+somewhere with real network access, before trusting the pilot run's
+output.
 
-Naming note: the PRD/architecture docs call the fourth org "CRA," but the
-actual SIN-application pages below are published by Service Canada (part
-of ESDC), not the Canada Revenue Agency — they're tagged `organisation=
-"Service Canada"` accordingly, since that's what should show in the
-source citation a user sees. Genuine CRA content (tax residency/filing)
-is a separate pair of entries below, tagged "CRA". Worth a decision on
-whether to correct "CRA" to "Service Canada" in prd.md/architecture.md's
-org list, or keep it as shorthand for the whitelist boundary while the
-per-page citation stays accurate regardless.
-
-TODO(week 1, blocking pilot run): product owner to confirm these URLs are
-current and correctly scoped before the pilot run uses them.
+Naming note (resolved): the PRD/architecture docs originally called the
+fourth org "CRA," but the actual SIN-application pages below are
+published by Service Canada (part of ESDC), not the Canada Revenue
+Agency. Corrected in prd.md/architecture.md/CLAUDE.md to "Service
+Canada/CRA" for the whitelist-boundary label; each entry below is
+individually tagged with its true publisher ("Service Canada" or "CRA")
+so the citation shown to users is always accurate regardless of the
+category label.
 """
 
 from dataclasses import dataclass
@@ -43,9 +40,7 @@ class WhitelistEntry:
     None for general content not tied to a single dimension."""
 
 
-# Researched draft — NOT yet confirmed. Do not run a real pipeline pass
-# against this without product-owner sign-off on the URLs (see module
-# docstring above).
+# Confirmed by the product owner 2026-09-24 (see docs/decisions.md).
 WHITELIST: list[WhitelistEntry] = [
     # --- IRCC: study permit, biometrics, medical exam, port of entry ---
     WhitelistEntry(

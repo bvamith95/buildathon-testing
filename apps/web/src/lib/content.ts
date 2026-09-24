@@ -19,7 +19,13 @@ export const HOUSING_LINKS = [
   },
 ] as const;
 
-export const SOURCE_ORGANISATIONS = ["UBC", "IRCC", "Government of BC", "CRA"] as const;
+export const SOURCE_ORGANISATIONS = [
+  "UBC",
+  "IRCC",
+  "Government of BC",
+  "Service Canada",
+  "CRA",
+] as const;
 
 // Placeholder — replace with the real content manifest's last-checked date
 // once the pipeline has published at least one reviewed variant.

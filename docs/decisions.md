@@ -30,6 +30,13 @@ Resolves the open decisions in `docs/prd.md` and the blocking/important items ra
 | 7 | Housing pointer links | Two links: the UBC housing website and the UBC Facebook roommates group. No affiliation is claimed — the landing page states plainly that Landfall doesn't cover housing and these are just starting points. The product owner verifies and updates these two links directly (not through the whitelist/citation pipeline, since housing content isn't whitelisted). A full housing feature is acknowledged as a likely future addition given the demand and anxiety the survey surfaced, but is explicitly not in scope for this build. |
 | 8 | Sample-size caveat visibility | No change. The PRD's existing inline caveats (graduate-only sample, warm demo panel, all-arrived-successfully) are sufficient; no additional top-of-document disclaimer. |
 
+## Resolved 2026-09-24
+
+| # | Item | Resolution |
+| --- | --- | --- |
+| 9 | Whitelist page list | Product owner signed off on the 22 researched URLs in `pipeline/landfall_pipeline/crawler/whitelist.py` (7 IRCC, 7 UBC, 3 Government of BC, 3 Service Canada, 2 CRA), unblocking the Week 1 pilot run pending only the Anthropic billing and Voyage network-access items already tracked in Linear (SAA-66). Liveness wasn't verified from this sandbox (network policy blocks all four domains) — re-check reachability the first time the pipeline actually runs somewhere with real network access. |
+| 10 | "CRA" terminology | Corrected. The fourth whitelist org was mislabeled "CRA" throughout `prd.md`/`architecture.md`/`CLAUDE.md` — the SIN-application pages are actually published by Service Canada (ESDC), not the Canada Revenue Agency. Docs now say "Service Canada/CRA" for the whitelist-boundary label; each whitelist entry is individually tagged with its true publisher so per-page citations shown to users stay accurate regardless. |
+
 ## Still open
 
 - **Product name.** Blocks week 2 copy.
