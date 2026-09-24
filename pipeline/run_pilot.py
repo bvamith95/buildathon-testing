@@ -63,12 +63,11 @@ PILOT_STEPS = [
 ]
 
 
-def main() -> int:
-    print(f"Pilot bucket signature: {PILOT_BUCKET.signature()}")
-    print(f"Program level: {PILOT_PROGRAM_LEVEL}")
-    print()
-
-    # 1. Crawl
+def build_index() -> tuple[RetrievalIndex, EmbeddingClient]:
+    """Crawl the whitelist, chunk, embed, and return a populated
+    (and saved) RetrievalIndex. Split out so a re-run that only wants to
+    regenerate steps against a new confidence threshold can skip straight
+    to RetrievalIndex.load() instead of re-crawling and re-embedding."""
     print(f"Crawling {len(WHITELIST)} whitelisted pages...")
     crawler = Crawler()
     results = []
@@ -81,23 +80,20 @@ def main() -> int:
     ok_count = sum(1 for r in results if r.ok)
     print(f"\n{ok_count}/{len(results)} pages fetched successfully.")
     if ok_count == 0:
-        print("No pages fetched — aborting. Check network access to the whitelist domains.")
-        return 1
+        raise RuntimeError("No pages fetched — check network access to the whitelist domains.")
 
-    # 2. Chunk
     print("\nChunking...")
     chunks = []
     for result in results:
         chunks.extend(chunk_fetch_result(result, organisation=result.entry.organisation))
     print(f"{len(chunks)} chunks with provenance.")
     if not chunks:
-        print("No chunks produced — aborting.")
-        return 1
+        raise RuntimeError("No chunks produced.")
 
-    # 3. Embed + index
     # Voyage's default rate limit without a payment method on file is 3
-    # requests/minute (free tokens still apply) — throttle to stay under
-    # it rather than ask for billing on a third service for a pilot run.
+    # requests/minute and 10K tokens/minute (free tokens still apply) —
+    # throttle to stay under it rather than ask for billing on a third
+    # service for a pilot run.
     print("\nEmbedding chunks (Voyage AI, throttled to 3 req/min)...")
     embeddings_client = EmbeddingClient()
     index = RetrievalIndex()
@@ -120,8 +116,10 @@ def main() -> int:
         print(f"  embedded batch {batch_num + 1}/{len(batches)} ({len(batch)} chunks)")
     index.save()
     print(f"Indexed {len(chunks)} chunks.")
+    return index, embeddings_client
 
-    # 4. Generate
+
+def generate_all_steps(index: RetrievalIndex, embeddings_client: EmbeddingClient) -> list:
     print(f"\nGenerating {len(PILOT_STEPS)} steps (Claude Opus 5)...")
     generator = StepGenerator(index=index, embeddings=embeddings_client)
     steps = []
@@ -139,7 +137,10 @@ def main() -> int:
                 time.sleep(30)
         print(f"  [{step.state}] {step_id}: {step.title!r} (confidence={step.confidence:.2f})")
         steps.append(step)
+    return steps
 
+
+def diff_and_queue(steps: list) -> None:
     guide = Guide(
         content_version=1,
         program_level=PILOT_PROGRAM_LEVEL,
@@ -147,15 +148,26 @@ def main() -> int:
         steps=steps,
         generated_at=datetime.now(timezone.utc),
     )
-
-    # 5. Diff against any previous published version (expected: none yet)
     previous = load_previous_guide(guide.cache_key())
     diffs = diff_guides(previous, guide)
-
-    # 6. Write review queue (does NOT publish)
     write_queue(diffs)
     print(f"\nReview queue written to pipeline/data/review_queue.json ({len(diffs)} steps to review).")
     print("Nothing has been published. Review the steps above, then run apply_pilot_review.py.")
+
+
+def main() -> int:
+    print(f"Pilot bucket signature: {PILOT_BUCKET.signature()}")
+    print(f"Program level: {PILOT_PROGRAM_LEVEL}")
+    print()
+
+    try:
+        index, embeddings_client = build_index()
+    except RuntimeError as exc:
+        print(str(exc))
+        return 1
+
+    steps = generate_all_steps(index, embeddings_client)
+    diff_and_queue(steps)
     return 0
 
 

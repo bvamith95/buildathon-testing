@@ -7,9 +7,17 @@ there is no fallback to the model's own knowledge (docs/prd.md,
 
 The confidence threshold itself is embedding similarity between the
 step's claim and its best-matching chunk, with the per-bucket cutoff
-tuned after the Week 1 pilot run (docs/decisions.md, item 1) — DEFAULT_
-CONFIDENCE_THRESHOLD below is a placeholder starting point, not the
-tuned value.
+tuned after the Week 1 pilot run (docs/decisions.md, item 1).
+
+Tuned 2026-09-24 from the pilot run's actual scores: correct top-1
+matches (e.g. "apply for a study permit" -> IRCC's own apply page)
+scored 0.56-0.67 cosine similarity — well below the original 0.75
+placeholder, which sent every pilot step to no_source despite retrieval
+finding the right page every time. 0.5 sits safely below the observed
+correct-match range while still well above what an unrelated chunk
+should score. Re-tune per bucket once more buckets have real pilot data;
+this default was calibrated against IRCC/UBC/BC/Service Canada content
+specifically.
 """
 
 from __future__ import annotations
@@ -22,7 +30,7 @@ from landfall_pipeline.generation.embeddings import EmbeddingClient
 from landfall_pipeline.generation.retrieval_index import IndexedChunk, RetrievalIndex
 from landfall_pipeline.store.schema import Source, Step, WhereToDo
 
-DEFAULT_CONFIDENCE_THRESHOLD = 0.75
+DEFAULT_CONFIDENCE_THRESHOLD = 0.5
 
 
 class GeneratedStepContent(BaseModel):
