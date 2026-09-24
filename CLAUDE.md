@@ -39,7 +39,7 @@ All content lives under `docs/`, documenting the "Una" product (tagline "una for
 
 - `docs/prd.md` — the product requirements document: problem, users, scope, success metrics, screens, personalisation model, content states, data model, non-functional requirements, and the 4-week build plan.
 - `docs/architecture.md` — the technical architecture: system context, containers, offline content-pipeline sequence, online request-path sequence, bucket-resolution logic, client state-resolution logic, data model (ER diagram), and deployment shape.
-- `docs/decisions.md` — the decision log. Every open decision from `prd.md` and every blocking/important item raised in review has a resolution recorded here, dated and attributed. Two items remain open (see "Still open" at the end of that file): the product name, and the interim rendering behavior for a bucket signature observed before it's added to the pre-generated set.
+- `docs/decisions.md` — the decision log. Every open decision from `prd.md` and every blocking/important item raised in review has a resolution recorded here, dated and attributed. One item remains open (see "Still open" at the end of that file): the interim rendering behavior for a bucket signature observed before it's added to the pre-generated set.
 - `docs/prd-review.md` — a review of the PRD, annotated with resolutions pointing back to `decisions.md`.
 - `docs/implementation-plan.md` — the 4-week build broken into four parallel workstreams (Pipeline, Client, Data/Analytics, Product ops) with per-week task checklists and a Gantt-style sequencing diagram.
 
