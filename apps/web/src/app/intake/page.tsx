@@ -96,12 +96,14 @@ function IntakeForm() {
                 }}
                 onFocus={() => setShowResults(true)}
                 placeholder="Start typing a country..."
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-hover dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-hover focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
               />
               {showResults && !selected && query.trim().length > 0 && (
                 <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
                   {results.length === 0 && (
-                    <li className="px-3 py-2 text-sm text-zinc-500">No matches — we&apos;ll use general guidance instead.</li>
+                    <li className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">
+                      No matches — we&apos;ll use general guidance instead.
+                    </li>
                   )}
                   {results.map((entry) => (
                     <li key={entry.code}>
@@ -122,7 +124,7 @@ function IntakeForm() {
               )}
             </div>
             {!selected && query.trim().length === 0 && (
-              <p className="text-xs text-zinc-500 dark:text-zinc-500">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 Don&apos;t see your country? Pick the closest match — we&apos;ll flag anything that might not fully apply.
               </p>
             )}
@@ -138,9 +140,9 @@ function IntakeForm() {
               min={TODAY}
               value={arrivalDate}
               onChange={(e) => setArrivalDate(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-hover dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-hover focus-visible:ring-2 focus-visible:ring-brand-hover focus-visible:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
-            <p className="text-xs text-zinc-500 dark:text-zinc-500">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Your best guess is fine — you can change this later.
             </p>
             <label className="mt-1 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">

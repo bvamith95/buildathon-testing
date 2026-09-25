@@ -18,6 +18,13 @@
   --brand: #c6d531;
   --brand-hover: #b3c02a;
   --brand-foreground: #14170a;
+
+  /* Same hue/saturation as --brand-hover, darkened until it clears 4.5:1
+     on white (measured 5.59:1) -- --brand-hover itself is only 2:1 on
+     white, fine as a button fill with dark text on top, but not usable
+     as light-mode TEXT color (links, "Read more"). Only needed in light
+     mode: --brand (12.96:1 on black) already works fine as dark-mode text. */
+  --brand-text: #656d18;
 }
 
 @theme inline {
@@ -26,6 +33,7 @@
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-text: var(--brand-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

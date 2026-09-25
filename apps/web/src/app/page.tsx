@@ -115,7 +115,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <footer className="flex flex-col gap-2 border-t border-zinc-200 pt-4 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
+        <footer className="flex flex-col gap-2 border-t border-zinc-200 pt-4 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
           <p>
             Sources: {SOURCE_ORGANISATIONS.join(", ")} — last checked{" "}
             {CONTENT_LAST_CHECKED}.

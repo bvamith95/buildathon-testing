@@ -69,7 +69,10 @@ function ResolvingSkeleton() {
   return (
     <div className="flex flex-col gap-4" role="status" aria-label="Building your checklist">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="animate-pulse rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div
+          key={i}
+          className="motion-safe:animate-pulse rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+        >
           <div className="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
           <div className="mt-3 h-4 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800" />
           <div className="mt-2 h-3 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800" />
@@ -124,6 +127,10 @@ function ReasonChipPicker({ onSubmit }: { onSubmit: (reasons: string[], text: st
                 : "border-zinc-300 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-400"
             }`}
           >
+            {/* Selected state doesn't rely on the fill color alone (WCAG
+                1.4.1) -- a checkmark mirrors how CheckboxButton pairs its
+                own states with a glyph, not just color. */}
+            {selected.includes(reason.value) && "✓ "}
             {reason.label}
           </button>
         ))}
@@ -133,7 +140,7 @@ function ReasonChipPicker({ onSubmit }: { onSubmit: (reasons: string[], text: st
         onChange={(e) => setText(e.target.value)}
         placeholder="Anything else? (optional)"
         rows={2}
-        className="w-full resize-none rounded-lg border border-zinc-300 bg-white p-2 text-xs text-zinc-800 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        className="w-full resize-none rounded-lg border border-zinc-300 bg-white p-2 text-xs text-zinc-800 placeholder:text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-400"
       />
       <button
         type="button"
@@ -164,7 +171,7 @@ function CheckboxButton({ status, onCycle }: { status: StepStatus; onCycle: () =
     status === "done"
       ? "border-brand bg-brand text-brand-foreground"
       : status === "not_applicable"
-        ? "border-zinc-300 bg-zinc-100 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900"
+        ? "border-zinc-300 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
         : "border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950";
 
   return (
@@ -181,7 +188,7 @@ function SourceBlock({ step, stale }: { step: Step; stale: boolean }) {
       className={`mt-3 flex flex-col gap-1 rounded-lg p-2 text-xs ${
         stale
           ? "bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
-          : "text-zinc-500 dark:text-zinc-500"
+          : "text-zinc-500 dark:text-zinc-400"
       }`}
     >
       {step.sources.map((source, i) => (
@@ -202,7 +209,7 @@ function SourceBlock({ step, stale }: { step: Step; stale: boolean }) {
 
 function EstimateTag() {
   return (
-    <span className="w-fit rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:bg-zinc-900 dark:text-zinc-500">
+    <span className="w-fit rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
       Estimated
     </span>
   );
@@ -213,7 +220,7 @@ function MinimalStepCard({ step, date, isEstimated }: { step: Step; date: Date; 
     <li className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-500">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
             {formatDate(date)} &middot; {formatRelativeDate(date)}
             {isEstimated && <EstimateTag />}
           </span>
@@ -223,7 +230,7 @@ function MinimalStepCard({ step, date, isEstimated }: { step: Step; date: Date; 
           Source pending
         </span>
       </div>
-      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-500">
+      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         We don&apos;t have a source we&apos;re confident enough in yet for the details here.
       </p>
       <a
@@ -231,7 +238,7 @@ function MinimalStepCard({ step, date, isEstimated }: { step: Step; date: Date; 
         target="_blank"
         rel="noreferrer"
         onClick={() => track("outbound_click", { step_id: step.id, host: step.where.host })}
-        className="mt-3 inline-block text-sm font-medium text-brand-hover underline underline-offset-2 dark:text-brand"
+        className="mt-3 inline-block text-sm font-medium text-brand-text underline underline-offset-2 dark:text-brand"
       >
         {step.where.label} &rarr;
       </a>
@@ -290,13 +297,13 @@ function StepCard({
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-500">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
               {formatDate(date)} &middot; {formatRelativeDate(date)}
               {isEstimated && <EstimateTag />}
             </span>
             <h3
               className={`text-base font-semibold ${
-                isDone ? "text-zinc-400 line-through dark:text-zinc-600" : "text-zinc-900 dark:text-zinc-50"
+                isDone ? "text-zinc-600 line-through dark:text-zinc-400" : "text-zinc-900 dark:text-zinc-50"
               }`}
             >
               {step.title}
@@ -322,7 +329,7 @@ function StepCard({
                   if (next) track("step_expanded", { step_id: step.id, state });
                 }}
                 aria-expanded={whyExpanded}
-                className="mt-1 text-xs font-medium text-brand-hover dark:text-brand"
+                className="mt-1 text-xs font-medium text-brand-text dark:text-brand"
               >
                 {whyExpanded ? "Show less" : "Read more"}
               </button>
@@ -331,7 +338,7 @@ function StepCard({
 
           {step.prerequisites.length > 0 && (
             <div className="mt-3">
-              <h4 className="text-xs font-medium text-zinc-500 dark:text-zinc-500">What you need</h4>
+              <h4 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">What you need</h4>
               <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-xs text-zinc-600 dark:text-zinc-400">
                 {step.prerequisites.map((item, i) => (
                   <li key={i}>{item}</li>
@@ -340,7 +347,7 @@ function StepCard({
             </div>
           )}
 
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-500 dark:text-zinc-500">
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
             {step.cost && (
               <div>
                 <dt className="inline font-medium">Cost: </dt>
@@ -356,7 +363,7 @@ function StepCard({
           </dl>
 
           {step.office && (
-            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
               <span className="font-medium">Who handles this: </span>
               {step.office.name}
               {step.office.note ? ` — ${step.office.note}` : ""}
@@ -368,7 +375,7 @@ function StepCard({
             target="_blank"
             rel="noreferrer"
             onClick={() => track("outbound_click", { step_id: step.id, host: step.where.host })}
-            className="mt-3 inline-block text-sm font-medium text-brand-hover underline underline-offset-2 dark:text-brand"
+            className="mt-3 inline-block text-sm font-medium text-brand-text underline underline-offset-2 dark:text-brand"
           >
             {step.where.label} ({step.where.host}) &rarr;
           </a>
@@ -376,7 +383,7 @@ function StepCard({
           <SourceBlock step={step} stale={isStale} />
 
           {step.applies_to_rules.length > 0 && (
-            <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-600">
+            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
               <span className="font-medium">Why this is in your guide: </span>
               {step.applies_to_rules[0]}
             </p>
@@ -384,7 +391,7 @@ function StepCard({
 
           <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-900">
             {thumbsPhase === "done" ? (
-              <span className="text-xs text-zinc-500 dark:text-zinc-500">Thanks for letting us know.</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Thanks for letting us know.</span>
             ) : thumbsPhase === "reasons" ? (
               <ReasonChipPicker
                 onSubmit={(reasons, text) => {
@@ -403,7 +410,7 @@ function StepCard({
               />
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-400 dark:text-zinc-600">Was this helpful?</span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-400">Was this helpful?</span>
                 <button
                   type="button"
                   aria-label="Yes, this was helpful"
@@ -487,7 +494,7 @@ function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; 
               type="button"
               aria-label="Close"
               onClick={() => setOpen(false)}
-              className="shrink-0 text-lg leading-none text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              className="shrink-0 text-lg leading-none text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
             >
               &times;
             </button>
@@ -528,7 +535,7 @@ function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; 
                   <button
                     type="button"
                     onClick={() => setPhase("done")}
-                    className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    className="text-xs text-zinc-600 underline underline-offset-2 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
                   >
                     No thanks
                   </button>
@@ -689,7 +696,7 @@ function ReminderOptIn({ guide, arrivalDate, profileKey }: { guide: Guide; arriv
             if (status === "error") setStatus("idle");
           }}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 placeholder:text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-400"
         />
         <button
           type="submit"
@@ -816,7 +823,7 @@ function Timeline({
           }
           return (
             <section key={phase.key} aria-label={phase.label} className="flex flex-col gap-3">
-              <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+              <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 {phase.label}
               </h2>
               <ul className="flex flex-col gap-3">
@@ -943,6 +950,10 @@ function GuideView() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-12 sm:px-8">
+        {/* No visible page title elsewhere on this screen -- sr-only so
+            screen reader users still land on a real heading (WCAG 1.3.1 /
+            2.4.6), without changing the visual design. */}
+        <h1 className="sr-only">Your checklist</h1>
         <Link
           href="/"
           className="w-fit text-xs font-medium text-zinc-500 underline underline-offset-2 dark:text-zinc-400"
