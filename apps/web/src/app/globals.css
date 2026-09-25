@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Light by default regardless of OS preference — the `dark:` variant
+   only activates via a `.dark` class, not prefers-color-scheme. No
+   toggle sets that class yet (product decision: light mode looks more
+   welcoming for now); wiring one up later just needs to add/remove
+   `dark` on <html> and every `dark:` utility already in place lights up. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -23,11 +30,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
