@@ -160,15 +160,17 @@ function StepCard({
   step,
   isEstimated,
   feedbackContext,
+  guideKey,
 }: {
   arrivalDate: Date;
   step: Step;
   isEstimated: boolean;
   feedbackContext: FeedbackContext;
+  guideKey: string;
 }) {
   const date = resolveStepDate(arrivalDate, step);
   const state: StepState = effectiveState(step);
-  const [status, setStatus] = useStepStatus(step.id);
+  const [status, setStatus] = useStepStatus(guideKey, step.id);
   const [whyExpanded, setWhyExpanded] = useState(false);
   const [thanked, setThanked] = useState(false);
 
@@ -454,12 +456,14 @@ function ReviewStrip({
   arrivalDate,
   isEstimated,
   feedbackContext,
+  guideKey,
 }: {
   phase: (typeof PHASES)[number];
   steps: Step[];
   arrivalDate: Date;
   isEstimated: boolean;
   feedbackContext: FeedbackContext;
+  guideKey: string;
 }) {
   const dates = steps.map((s) => resolveStepDate(arrivalDate, s));
   const earliest = formatDate(dates.reduce((a, b) => (a < b ? a : b)));
@@ -480,6 +484,7 @@ function ReviewStrip({
             step={step}
             isEstimated={isEstimated}
             feedbackContext={feedbackContext}
+            guideKey={guideKey}
           />
         ))}
       </ul>
@@ -503,6 +508,10 @@ function Timeline({
   hasContentChanged: boolean;
 }) {
   const today = new Date();
+  // Checkbox state is scoped to this specific guide (not just STEP.id —
+  // see progress.ts), since the same step ids are reused by design across
+  // every bucket's guide.
+  const guideKey = cacheKey(guide.bucket_signature, guide.program_level);
 
   const stepsByPhase = PHASES.map((phase) => ({
     phase,
@@ -515,7 +524,7 @@ function Timeline({
   const isWellPastWindow = daysSinceArrival > WELL_PAST_WINDOW_DAYS;
 
   const checkboxStepIds = guide.steps.filter((s) => effectiveState(s) !== "no_source").map((s) => s.id);
-  const statuses = useAllStepStatuses(checkboxStepIds);
+  const statuses = useAllStepStatuses(guideKey, checkboxStepIds);
   const allDone =
     checkboxStepIds.length > 0 &&
     checkboxStepIds.every((id) => statuses[id] === "done" || statuses[id] === "not_applicable");
@@ -579,6 +588,7 @@ function Timeline({
                 arrivalDate={arrivalDate}
                 isEstimated={isEstimated}
                 feedbackContext={feedbackContext}
+                guideKey={guideKey}
               />
             );
           }
@@ -595,6 +605,7 @@ function Timeline({
                     step={step}
                     isEstimated={isEstimated}
                     feedbackContext={feedbackContext}
+                    guideKey={guideKey}
                   />
                 ))}
               </ul>
