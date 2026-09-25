@@ -110,7 +110,7 @@ The phase structure mirrors the survey's own stage wording, which is the mental 
 
 | Phase | Window | Steps | Note |
 | --- | --- | --- | --- |
-| After your offer | Offer to T-60 | 4 | 33.3% reported difficulty here |
+| After you accept your offer | Offer to T-60 | 4 | 33.3% reported difficulty here |
 | Preparing to move | T-59 to T-1 | 4 | Busiest stretch, 66.7% |
 | Landing day | T-0 | 1 | Permit is issued here, not before |
 | Your first two weeks | T+1 to T+14 | 5 | Busiest stretch, 61.9% |
