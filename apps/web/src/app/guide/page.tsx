@@ -74,6 +74,79 @@ const CHECKBOX_LABEL: Record<StepStatus, string> = {
   not_applicable: "Mark as not done",
 };
 
+// SAA-43's remaining scope: thumbs-down reason chips (multi-select, docs/prd.md's
+// "Feedback payload" reason[]). Values are the analytics-facing slugs, labels are
+// the displayed chip text. "housing" exists because the PRD's own risk table
+// calls out tracking housing complaints through this exact mechanism.
+const FEEDBACK_REASONS = [
+  { value: "inaccurate", label: "Inaccurate or outdated" },
+  { value: "confusing", label: "Confusing or hard to follow" },
+  { value: "missing_info", label: "Missing information I needed" },
+  { value: "not_relevant", label: "Not relevant to my situation" },
+  { value: "housing", label: "Wish this covered housing" },
+  { value: "other", label: "Something else" },
+] as const;
+
+// Shared by the per-step and overall thumbs-down flows. Submission is
+// deferred until this is filled out (or explicitly skipped), so every
+// negative feedback_submitted event carries at least an attempted reason.
+function ReasonChipPicker({ onSubmit }: { onSubmit: (reasons: string[], text: string) => void }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [text, setText] = useState("");
+
+  function toggle(value: string) {
+    setSelected((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-1.5">
+        {FEEDBACK_REASONS.map((reason) => (
+          <button
+            key={reason.value}
+            type="button"
+            aria-pressed={selected.includes(reason.value)}
+            onClick={() => toggle(reason.value)}
+            className={`rounded-full border px-2 py-1 text-xs transition ${
+              selected.includes(reason.value)
+                ? "border-brand bg-brand text-brand-foreground"
+                : "border-zinc-300 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-400"
+            }`}
+          >
+            {reason.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Anything else? (optional)"
+        rows={2}
+        className="w-full resize-none rounded-lg border border-zinc-300 bg-white p-2 text-xs text-zinc-800 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+      />
+      <button
+        type="button"
+        onClick={() => onSubmit(selected, text.trim())}
+        className="w-fit rounded-md bg-brand px-3 py-1 text-xs font-medium text-brand-foreground"
+      >
+        Submit
+      </button>
+    </div>
+  );
+}
+
+// Sharing a generic invite to the app, not the sender's own filled-in guide
+// URL: the guide URL carries the sharer's own citizenship/date/level, which
+// is very unlikely to also be correct for whoever they send it to (unlike
+// the profile-in-URL handoff CLAUDE.md describes for a student's own
+// desktop<->mobile use), and a mismatched profile risks a recipient landing
+// on a guide that doesn't fit them.
+function buildWhatsAppShareUrl(): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const message = `I've been using Una to keep track of everything for moving to UBC as an international student — study permit, SIN, MSP, all in one place with real sources. Worth a look: ${origin}`;
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
 function CheckboxButton({ status, onCycle }: { status: StepStatus; onCycle: () => void }) {
   const base = "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition";
   const style =
@@ -172,7 +245,7 @@ function StepCard({
   const state: StepState = effectiveState(step);
   const [status, setStatus] = useStepStatus(guideKey, step.id);
   const [whyExpanded, setWhyExpanded] = useState(false);
-  const [thanked, setThanked] = useState(false);
+  const [thumbsPhase, setThumbsPhase] = useState<"idle" | "reasons" | "done">("idle");
 
   if (state === "no_source") {
     return <MinimalStepCard step={step} date={date} isEstimated={isEstimated} />;
@@ -298,20 +371,33 @@ function StepCard({
             </p>
           )}
 
-          {/* Reason/text capture (the richer part of the PRD's feedback
-              payload) is still SAA-43 -- this submits the simple
-              up/down straight away since the backend now exists. */}
-          <div className="mt-3 flex items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
-            <span className="text-xs text-zinc-400 dark:text-zinc-600">Was this helpful?</span>
-            {thanked ? (
+          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-900">
+            {thumbsPhase === "done" ? (
               <span className="text-xs text-zinc-500 dark:text-zinc-500">Thanks for letting us know.</span>
+            ) : thumbsPhase === "reasons" ? (
+              <ReasonChipPicker
+                onSubmit={(reasons, text) => {
+                  setThumbsPhase("done");
+                  track("feedback_submitted", {
+                    scope: "step",
+                    value: "down",
+                    reason: reasons,
+                    text: text || undefined,
+                    step_id: step.id,
+                    profile_hash: feedbackContext.profileHash,
+                    content_version: feedbackContext.contentVersion,
+                    seconds_since_generation: secondsSinceGeneration(feedbackContext),
+                  });
+                }}
+              />
             ) : (
-              <>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400 dark:text-zinc-600">Was this helpful?</span>
                 <button
                   type="button"
                   aria-label="Yes, this was helpful"
                   onClick={() => {
-                    setThanked(true);
+                    setThumbsPhase("done");
                     track("feedback_submitted", {
                       scope: "step",
                       value: "up",
@@ -328,22 +414,12 @@ function StepCard({
                 <button
                   type="button"
                   aria-label="No, this was not helpful"
-                  onClick={() => {
-                    setThanked(true);
-                    track("feedback_submitted", {
-                      scope: "step",
-                      value: "down",
-                      step_id: step.id,
-                      profile_hash: feedbackContext.profileHash,
-                      content_version: feedbackContext.contentVersion,
-                      seconds_since_generation: secondsSinceGeneration(feedbackContext),
-                    });
-                  }}
+                  onClick={() => setThumbsPhase("reasons")}
                   className="rounded-md px-1.5 py-0.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
                 >
                   👎
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -372,20 +448,15 @@ function StepCard({
 // If a future feature (reminder opt-in, share) also wants a floating
 // corner affordance, coordinate placement with this one (e.g. stack
 // vertically) rather than overlapping the same corner.
+// "reasons" (thumbs down) and "share" (thumbs up) both follow the initial
+// rating -- reason chips turn a complaint into a fix (docs/prd.md), and a
+// WhatsApp-first share is the PRD's own bet on this cohort's actual
+// word-of-mouth channel (their survey named WhatsApp over Reddit 4:2).
+type RatingPhase = "rate" | "reasons" | "share" | "done";
+
 function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; feedbackContext: FeedbackContext }) {
   const [open, setOpen] = useState(false);
-  const [rating, setRating] = useState<"up" | "down" | null>(null);
-
-  function submit(value: "up" | "down") {
-    setRating(value);
-    track("feedback_submitted", {
-      scope: "overall",
-      value,
-      profile_hash: feedbackContext.profileHash,
-      content_version: feedbackContext.contentVersion,
-      seconds_since_generation: secondsSinceGeneration(feedbackContext),
-    });
-  }
+  const [phase, setPhase] = useState<RatingPhase>("rate");
 
   return (
     <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-end gap-2">
@@ -410,16 +481,64 @@ function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; 
               &times;
             </button>
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            {rating ? (
-              <span className="text-xs text-zinc-600 dark:text-zinc-400">Thanks for the rating!</span>
+          <div className="mt-2">
+            {phase === "done" ? (
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">Thanks!</span>
+            ) : phase === "reasons" ? (
+              <ReasonChipPicker
+                onSubmit={(reasons, text) => {
+                  setPhase("done");
+                  track("feedback_submitted", {
+                    scope: "overall",
+                    value: "down",
+                    reason: reasons,
+                    text: text || undefined,
+                    profile_hash: feedbackContext.profileHash,
+                    content_version: feedbackContext.contentVersion,
+                    seconds_since_generation: secondsSinceGeneration(feedbackContext),
+                  });
+                }}
+              />
+            ) : phase === "share" ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Know someone else moving to UBC? Send them Una.
+                </p>
+                <div className="flex items-center gap-3">
+                  <a
+                    href={buildWhatsAppShareUrl()}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => track("share_initiated", { channel: "whatsapp" })}
+                    className="rounded-md bg-brand px-3 py-1 text-xs font-medium text-brand-foreground"
+                  >
+                    Share on WhatsApp
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setPhase("done")}
+                    className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  >
+                    No thanks
+                  </button>
+                </div>
+              </div>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <span className="text-xs text-zinc-600 dark:text-zinc-400">Rate it overall</span>
                 <button
                   type="button"
                   aria-label="Overall, this was helpful"
-                  onClick={() => submit("up")}
+                  onClick={() => {
+                    setPhase("share");
+                    track("feedback_submitted", {
+                      scope: "overall",
+                      value: "up",
+                      profile_hash: feedbackContext.profileHash,
+                      content_version: feedbackContext.contentVersion,
+                      seconds_since_generation: secondsSinceGeneration(feedbackContext),
+                    });
+                  }}
                   className="rounded-md px-1.5 py-0.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
                 >
                   👍
@@ -427,12 +546,12 @@ function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; 
                 <button
                   type="button"
                   aria-label="Overall, this was not helpful"
-                  onClick={() => submit("down")}
+                  onClick={() => setPhase("reasons")}
                   className="rounded-md px-1.5 py-0.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
                 >
                   👎
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -444,7 +563,7 @@ function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; 
         onClick={() => setOpen((v) => !v)}
         className="flex h-12 w-12 items-center justify-center rounded-full border border-brand bg-brand text-xl shadow-lg transition motion-safe:hover:scale-105"
       >
-        {rating ? "✓" : "⭐"}
+        {phase === "rate" ? "⭐" : "✓"}
       </button>
     </div>
   );
