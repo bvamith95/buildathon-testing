@@ -10,13 +10,18 @@ import {
   ProgramLevel,
   Step,
   StepState,
+  daysBetween,
   effectiveState,
   formatRelativeDate,
   loadGuideForSignature,
   phaseForOffset,
   resolveStepDate,
 } from "@/lib/guide";
-import { StepStatus, nextStatus, useStepStatus } from "@/lib/progress";
+import { StepStatus, nextStatus, useAllStepStatuses, useStepStatus } from "@/lib/progress";
+
+// Beyond this many days after arrival, the guide is past its stated
+// coverage window (docs/prd.md: "roughly six weeks after arrival").
+const WELL_PAST_WINDOW_DAYS = 42;
 
 function parseLevel(raw: string | null): ProgramLevel {
   return raw === "undergrad" || raw === "undergraduate" ? "undergraduate" : "graduate";
@@ -94,13 +99,22 @@ function SourceBlock({ step, stale }: { step: Step; stale: boolean }) {
   );
 }
 
-function MinimalStepCard({ step, date }: { step: Step; date: Date }) {
+function EstimateTag() {
+  return (
+    <span className="w-fit rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:bg-zinc-900 dark:text-zinc-500">
+      Estimated
+    </span>
+  );
+}
+
+function MinimalStepCard({ step, date, isEstimated }: { step: Step; date: Date; isEstimated: boolean }) {
   return (
     <li className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-500">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-500">
             {formatDate(date)} &middot; {formatRelativeDate(date)}
+            {isEstimated && <EstimateTag />}
           </span>
           <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{step.title}</h3>
         </div>
@@ -123,7 +137,7 @@ function MinimalStepCard({ step, date }: { step: Step; date: Date }) {
   );
 }
 
-function StepCard({ arrivalDate, step }: { arrivalDate: Date; step: Step }) {
+function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step: Step; isEstimated: boolean }) {
   const date = resolveStepDate(arrivalDate, step);
   const state: StepState = effectiveState(step);
   const [status, setStatus] = useStepStatus(step.id);
@@ -131,7 +145,7 @@ function StepCard({ arrivalDate, step }: { arrivalDate: Date; step: Step }) {
   const [thanked, setThanked] = useState(false);
 
   if (state === "no_source") {
-    return <MinimalStepCard step={step} date={date} />;
+    return <MinimalStepCard step={step} date={date} isEstimated={isEstimated} />;
   }
 
   const isStale = state === "stale";
@@ -155,8 +169,9 @@ function StepCard({ arrivalDate, step }: { arrivalDate: Date; step: Step }) {
         <CheckboxButton status={status} onCycle={() => setStatus(nextStatus(status))} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-500">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-500">
               {formatDate(date)} &middot; {formatRelativeDate(date)}
+              {isEstimated && <EstimateTag />}
             </span>
             <h3
               className={`text-base font-semibold ${
@@ -276,13 +291,100 @@ function StepCard({ arrivalDate, step }: { arrivalDate: Date; step: Step }) {
   );
 }
 
-function Timeline({ guide, arrivalDate, isExactMatch }: { guide: Guide; arrivalDate: Date; isExactMatch: boolean }) {
+function AllDoneBanner() {
+  const [rating, setRating] = useState<"up" | "down" | null>(null);
+  return (
+    <div className="rounded-xl border border-brand bg-brand/10 p-4 text-sm text-zinc-800 dark:text-zinc-100">
+      <p className="font-semibold">You&apos;ve been through your whole checklist. Nice work.</p>
+      <div className="mt-2 flex items-center gap-2">
+        {rating ? (
+          <span className="text-xs text-zinc-600 dark:text-zinc-400">Thanks for the rating!</span>
+        ) : (
+          <>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">How did this checklist do overall?</span>
+            {/* Local-only for now, same as per-step thumbs — no backend yet (SAA-43/67). */}
+            <button
+              type="button"
+              aria-label="Overall, this was helpful"
+              onClick={() => setRating("up")}
+              className="rounded-md px-1.5 py-0.5 text-sm hover:bg-white/50 dark:hover:bg-black/20"
+            >
+              👍
+            </button>
+            <button
+              type="button"
+              aria-label="Overall, this was not helpful"
+              onClick={() => setRating("down")}
+              className="rounded-md px-1.5 py-0.5 text-sm hover:bg-white/50 dark:hover:bg-black/20"
+            >
+              👎
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReviewStrip({
+  phase,
+  steps,
+  arrivalDate,
+  isEstimated,
+}: {
+  phase: (typeof PHASES)[number];
+  steps: Step[];
+  arrivalDate: Date;
+  isEstimated: boolean;
+}) {
+  const dates = steps.map((s) => resolveStepDate(arrivalDate, s));
+  const earliest = formatDate(dates.reduce((a, b) => (a < b ? a : b)));
+  const latest = formatDate(dates.reduce((a, b) => (a > b ? a : b)));
+  const range = earliest === latest ? earliest : `${earliest} – ${latest}`;
+
+  return (
+    <details className="rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm text-zinc-600 marker:content-none dark:text-zinc-400">
+        <span className="font-medium text-zinc-800 dark:text-zinc-200">{phase.label}</span> — {steps.length} step
+        {steps.length === 1 ? "" : "s"}, {range}
+      </summary>
+      <ul className="flex flex-col gap-3 border-t border-zinc-100 p-4 pt-4 dark:border-zinc-900">
+        {steps.map((step) => (
+          <StepCard key={step.id} arrivalDate={arrivalDate} step={step} isEstimated={isEstimated} />
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function Timeline({
+  guide,
+  arrivalDate,
+  isExactMatch,
+  isEstimated,
+}: {
+  guide: Guide;
+  arrivalDate: Date;
+  isExactMatch: boolean;
+  isEstimated: boolean;
+}) {
+  const today = new Date();
+
   const stepsByPhase = PHASES.map((phase) => ({
     phase,
     steps: guide.steps
       .filter((s) => phaseForOffset(s.offset_days).key === phase.key)
       .sort((a, b) => a.offset_days - b.offset_days),
   })).filter((group) => group.steps.length > 0);
+
+  const daysSinceArrival = daysBetween(arrivalDate, today);
+  const isWellPastWindow = daysSinceArrival > WELL_PAST_WINDOW_DAYS;
+
+  const checkboxStepIds = guide.steps.filter((s) => effectiveState(s) !== "no_source").map((s) => s.id);
+  const statuses = useAllStepStatuses(checkboxStepIds);
+  const allDone =
+    checkboxStepIds.length > 0 &&
+    checkboxStepIds.every((id) => statuses[id] === "done" || statuses[id] === "not_applicable");
 
   return (
     <div className="flex flex-col gap-8">
@@ -296,18 +398,45 @@ function Timeline({ guide, arrivalDate, isExactMatch }: { guide: Guide; arrivalD
           This path is newer and less tested than the graduate path — let us know if something looks off.
         </div>
       )}
-      {stepsByPhase.map(({ phase, steps }) => (
-        <section key={phase.key} aria-label={phase.label} className="flex flex-col gap-3">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
-            {phase.label}
-          </h2>
-          <ul className="flex flex-col gap-3">
-            {steps.map((step) => (
-              <StepCard key={step.id} arrivalDate={arrivalDate} step={step} />
-            ))}
-          </ul>
-        </section>
-      ))}
+      {isWellPastWindow && (
+        <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+          It&apos;s been over six weeks since you landed — you&apos;re past the window this checklist is built for,
+          so some of what&apos;s below may no longer be relevant.
+        </div>
+      )}
+      {allDone && <AllDoneBanner />}
+      {isEstimated && (
+        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+          Dates below are estimated from the arrival date you guessed — once you book your flight, come back and
+          update it for exact dates.
+        </div>
+      )}
+      {stepsByPhase.map(({ phase, steps }) => {
+        const isPastPhase = steps.every((s) => daysBetween(resolveStepDate(arrivalDate, s), today) > 0);
+        if (isPastPhase) {
+          return (
+            <ReviewStrip
+              key={phase.key}
+              phase={phase}
+              steps={steps}
+              arrivalDate={arrivalDate}
+              isEstimated={isEstimated}
+            />
+          );
+        }
+        return (
+          <section key={phase.key} aria-label={phase.label} className="flex flex-col gap-3">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+              {phase.label}
+            </h2>
+            <ul className="flex flex-col gap-3">
+              {steps.map((step) => (
+                <StepCard key={step.id} arrivalDate={arrivalDate} step={step} isEstimated={isEstimated} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -320,6 +449,7 @@ function GuideView() {
   const citizenshipCode = searchParams.get("c");
   const level = parseLevel(searchParams.get("l"));
   const arrivalDate = parseArrivalDate(searchParams.get("d"));
+  const isEstimated = searchParams.get("e") === "1";
   const arrivalDateValue = arrivalDate?.getTime() ?? null;
   const isValid = citizenshipCode !== null && arrivalDateValue !== null;
   const requestKey = `${citizenshipCode}|${level}|${arrivalDateValue}`;
@@ -373,7 +503,12 @@ function GuideView() {
         )}
 
         {isValid && status === "ready" && result && arrivalDate && (
-          <Timeline guide={result.guide} arrivalDate={arrivalDate} isExactMatch={result.isExactMatch} />
+          <Timeline
+            guide={result.guide}
+            arrivalDate={arrivalDate}
+            isExactMatch={result.isExactMatch}
+            isEstimated={isEstimated}
+          />
         )}
       </main>
     </div>

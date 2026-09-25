@@ -15,6 +15,7 @@ function IntakeForm() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<CitizenshipEntry | null>(null);
   const [arrivalDate, setArrivalDate] = useState("");
+  const [isEstimate, setIsEstimate] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
   const results = useMemo(() => searchCitizenships(query).slice(0, 8), [query]);
@@ -28,6 +29,7 @@ function IntakeForm() {
       d: arrivalDate,
       l: level === "undergraduate" ? "undergrad" : "grad",
     });
+    if (isEstimate) params.set("e", "1");
     router.push(`/guide?${params.toString()}`);
   }
 
@@ -115,6 +117,15 @@ function IntakeForm() {
             <p className="text-xs text-zinc-500 dark:text-zinc-500">
               Your best guess is fine — you can change this later.
             </p>
+            <label className="mt-1 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <input
+                type="checkbox"
+                checked={isEstimate}
+                onChange={(e) => setIsEstimate(e.target.checked)}
+                className="h-4 w-4 rounded border-zinc-300 text-brand-hover focus:ring-brand-hover dark:border-zinc-700"
+              />
+              I haven&apos;t booked my flight yet — this is my best guess
+            </label>
           </div>
 
           <button

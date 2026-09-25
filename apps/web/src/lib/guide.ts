@@ -112,12 +112,20 @@ export function effectiveState(step: Step, today: Date = new Date()): StepState 
   return ageDays > windowDays ? "stale" : step.state;
 }
 
+/** Whole days from `from` to `to`, ignoring time of day — positive when
+ * `to` is later. Shared by the relative-date label, the past-phase
+ * collapsing, and the well-past-window guide-level state (SAA-41), so
+ * all three agree on what "today" means. */
+export function daysBetween(from: Date, to: Date): number {
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 /** Absolute + relative together, e.g. "Wed, May 27 · in 45 days"
  * (docs/prd.md: "the relative framing is what makes it feel personal"). */
 export function formatRelativeDate(date: Date, today: Date = new Date()): string {
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.round((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = daysBetween(today, date);
 
   if (diffDays === 0) return "today";
   if (diffDays === 1) return "tomorrow";

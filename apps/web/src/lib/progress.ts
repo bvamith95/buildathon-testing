@@ -3,7 +3,7 @@
 // content update that reshuffles steps can't untick or misapply the
 // wrong step for a returning user. Client-only, no backend.
 
-import { useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "react";
 
 export type StepStatus = "done" | "not_done" | "not_applicable";
 
@@ -66,4 +66,28 @@ export function useStepStatus(stepId: string): [StepStatus, (status: StepStatus)
   }
 
   return [status, setStatus];
+}
+
+/** Aggregate read for the "all steps done" guide-level state (SAA-41) —
+ * needs every checkbox-bearing step's status in one place, not just one
+ * step's. useSyncExternalStore requires getSnapshot to return a stable
+ * reference when nothing changed, so the snapshot is cached per hook
+ * instance (via useRef) and only rebuilt when the underlying values
+ * actually differ. */
+export function useAllStepStatuses(stepIds: string[]): Record<string, StepStatus> {
+  const cache = useRef<{ key: string; snapshot: Record<string, StepStatus> }>({ key: "", snapshot: {} });
+
+  function getSnapshot(): Record<string, StepStatus> {
+    const all = readAll();
+    const key = stepIds.map((id) => `${id}:${all[id] ?? "not_done"}`).join("|");
+    if (key !== cache.current.key) {
+      cache.current = {
+        key,
+        snapshot: Object.fromEntries(stepIds.map((id) => [id, all[id] ?? "not_done"])),
+      };
+    }
+    return cache.current.snapshot;
+  }
+
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
