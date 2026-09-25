@@ -32,6 +32,32 @@ interface Database {
         };
         Relationships: [];
       };
+      reminder_optins: {
+        Row: {
+          id: number;
+          email: string;
+          bucket_signature: string;
+          program_level: string;
+          arrival_date: string;
+          content_version: number;
+          created_at: string;
+        };
+        Insert: {
+          email: string;
+          bucket_signature: string;
+          program_level: string;
+          arrival_date: string;
+          content_version: number;
+        };
+        Update: {
+          email?: string;
+          bucket_signature?: string;
+          program_level?: string;
+          arrival_date?: string;
+          content_version?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };

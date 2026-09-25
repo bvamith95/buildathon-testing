@@ -26,3 +26,29 @@ create index if not exists events_created_at_idx on events (created_at);
 -- policies means the anon key -- even if it leaked -- can neither read
 -- nor write this table directly.
 alter table events enable row level security;
+
+-- Reminder opt-ins (SAA-45). Kept separate from `events` because it holds
+-- real PII (email) rather than anonymous analytics, and because the
+-- eventual send-side (SAA-24, still gated on the product owner's sending
+-- domain) will read against it directly by bucket/level/arrival_date --
+-- one opt-in row covers every future deadline in that guide, there's no
+-- per-step selection here. `session_id` is deliberately NOT stored
+-- alongside email: docs/prd.md's privacy line and the salted-profile_hash
+-- design elsewhere both exist specifically so a session can't be tied to
+-- a real identity, and storing them side by side here would undo that.
+create table if not exists reminder_optins (
+  id bigint generated always as identity primary key,
+  email text not null,
+  bucket_signature text not null,
+  program_level text not null,
+  arrival_date date not null,
+  content_version integer not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists reminder_optins_email_idx on reminder_optins (email);
+
+-- Same reasoning as `events` above: no anon/authenticated policies, so the
+-- publishable key can neither read nor write this table -- only the
+-- server-side /api/reminders route (service_role key) can.
+alter table reminder_optins enable row level security;

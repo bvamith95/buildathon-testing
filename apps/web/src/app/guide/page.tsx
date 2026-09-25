@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resolveBucket, signatureString } from "@/lib/buckets";
@@ -22,6 +22,7 @@ import { StepStatus, nextStatus, useAllStepStatuses, useStepStatus } from "@/lib
 import { computeProfileHash, getSessionId, track } from "@/lib/analytics";
 import { loadProfile, saveProfile } from "@/lib/profile";
 import { recordVisit } from "@/lib/visits";
+import { hasOptedIn, markOptedIn } from "@/lib/reminders";
 
 // Beyond this many days after arrival, the guide is past its stated
 // coverage window (docs/prd.md: "roughly six weeks after arrival").
@@ -52,6 +53,16 @@ function parseArrivalDate(raw: string | null): Date | null {
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" });
+}
+
+// YYYY-MM-DD in local time, matching the shape parseArrivalDate reads back
+// (`${raw}T00:00:00`) -- toISOString() would shift by the runtime's UTC
+// offset instead of round-tripping the same calendar date.
+function toDateParam(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function ResolvingSkeleton() {
@@ -611,6 +622,92 @@ function ReviewStrip({
   );
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// SAA-45: opt-in capture only -- actual sending is a separate, still-gated
+// track (SAA-24, the product owner's sending domain + unsubscribe
+// mechanism). One opt-in covers every future deadline in this specific
+// guide (no per-step selection), matching docs/prd.md's "email deadline
+// reminders" framing rather than a step-by-step subscription model.
+function ReminderOptIn({ guide, arrivalDate, profileKey }: { guide: Guide; arrivalDate: Date; profileKey: string }) {
+  const [optedIn, setOptedIn] = useState(() => hasOptedIn(profileKey));
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
+
+  if (optedIn) {
+    return (
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+        You&apos;re signed up for email reminders before upcoming deadlines.
+      </div>
+    );
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!EMAIL_RE.test(email)) {
+      setStatus("error");
+      return;
+    }
+    setStatus("submitting");
+    try {
+      const res = await fetch("/api/reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          bucket_signature: guide.bucket_signature,
+          program_level: guide.program_level,
+          arrival_date: toDateParam(arrivalDate),
+          content_version: guide.content_version,
+        }),
+      });
+      if (!res.ok) throw new Error("request failed");
+      markOptedIn(profileKey);
+      setOptedIn(true);
+      track("reminder_opt_in");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+    >
+      <label htmlFor="reminder-email" className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+        Want an email reminder before each deadline?
+      </label>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          id="reminder-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (status === "error") setStatus("idle");
+          }}
+          placeholder="you@example.com"
+          className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        />
+        <button
+          type="submit"
+          disabled={status === "submitting"}
+          className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground disabled:opacity-50"
+        >
+          {status === "submitting" ? "Signing up…" : "Notify me"}
+        </button>
+      </div>
+      {status === "error" && (
+        <p className="text-xs text-red-600 dark:text-red-400">
+          Something went wrong — check your email address and try again.
+        </p>
+      )}
+    </form>
+  );
+}
+
 function Timeline({
   guide,
   arrivalDate,
@@ -698,6 +795,10 @@ function Timeline({
             update it for exact dates.
           </div>
         )}
+        {/* Not worth offering reminders once the guide is past its own
+            coverage window -- there's nothing upcoming left to remind
+            anyone about. */}
+        {!isWellPastWindow && <ReminderOptIn guide={guide} arrivalDate={arrivalDate} profileKey={profileKey} />}
         {stepsByPhase.map(({ phase, steps }) => {
           const isPastPhase = steps.every((s) => daysBetween(resolveStepDate(arrivalDate, s), today) > 0);
           if (isPastPhase) {
