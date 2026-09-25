@@ -29,7 +29,7 @@ const WELL_PAST_WINDOW_DAYS = 42;
 
 // Bundles what feedback_submitted needs (docs/prd.md's "Feedback payload")
 // so it doesn't have to be threaded as three separate props through
-// Timeline -> ReviewStrip -> StepCard and Timeline -> OverallRatingCard.
+// Timeline -> ReviewStrip -> StepCard and Timeline -> FloatingRatingButton.
 interface FeedbackContext {
   profileHash: string | null;
   contentVersion: number;
@@ -356,7 +356,22 @@ function StepCard({
 // never see it, biasing the helpful-rate metric toward only the most
 // thorough users. `allDone` still gets its own congratulatory framing
 // when it applies, since finishing everything really is worth noting.
-function OverallRatingCard({ allDone, feedbackContext }: { allDone: boolean; feedbackContext: FeedbackContext }) {
+//
+// Floating action button rather than an inline banner (design decision
+// 2026-09-25, docs/decisions.md): the trigger is "first deep scroll," so
+// by definition the user has already scrolled past the top of the page
+// by the time this fires -- a banner inserted there appears behind them,
+// exactly where they won't see it. A `position: fixed` corner button is
+// visible regardless of scroll position, on both mobile and desktop
+// (mobile especially: it costs no permanent vertical space the way a
+// sticky header would on an already-small screen, and a bottom corner
+// sits in the natural one-handed thumb zone).
+//
+// If a future feature (reminder opt-in, share) also wants a floating
+// corner affordance, coordinate placement with this one (e.g. stack
+// vertically) rather than overlapping the same corner.
+function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; feedbackContext: FeedbackContext }) {
+  const [open, setOpen] = useState(false);
   const [rating, setRating] = useState<"up" | "down" | null>(null);
 
   function submit(value: "up" | "down") {
@@ -371,37 +386,64 @@ function OverallRatingCard({ allDone, feedbackContext }: { allDone: boolean; fee
   }
 
   return (
-    <div className="rounded-xl border border-brand bg-brand/10 p-4 text-sm text-zinc-800 dark:text-zinc-100">
-      <p className="font-semibold">
-        {allDone
-          ? "You've been through your whole checklist. Nice work."
-          : "How's this checklist working for you so far?"}
-      </p>
-      <div className="mt-2 flex items-center gap-2">
-        {rating ? (
-          <span className="text-xs text-zinc-600 dark:text-zinc-400">Thanks for the rating!</span>
-        ) : (
-          <>
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">Rate it overall</span>
+    <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-end gap-2">
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Rate this checklist"
+          className="w-64 rounded-xl border border-brand bg-white p-4 text-sm text-zinc-800 shadow-lg dark:bg-zinc-950 dark:text-zinc-100"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-semibold">
+              {allDone
+                ? "You've been through your whole checklist. Nice work."
+                : "How's this checklist working for you so far?"}
+            </p>
             <button
               type="button"
-              aria-label="Overall, this was helpful"
-              onClick={() => submit("up")}
-              className="rounded-md px-1.5 py-0.5 text-sm hover:bg-white/50 dark:hover:bg-black/20"
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              className="shrink-0 text-lg leading-none text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
             >
-              👍
+              &times;
             </button>
-            <button
-              type="button"
-              aria-label="Overall, this was not helpful"
-              onClick={() => submit("down")}
-              className="rounded-md px-1.5 py-0.5 text-sm hover:bg-white/50 dark:hover:bg-black/20"
-            >
-              👎
-            </button>
-          </>
-        )}
-      </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            {rating ? (
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">Thanks for the rating!</span>
+            ) : (
+              <>
+                <span className="text-xs text-zinc-600 dark:text-zinc-400">Rate it overall</span>
+                <button
+                  type="button"
+                  aria-label="Overall, this was helpful"
+                  onClick={() => submit("up")}
+                  className="rounded-md px-1.5 py-0.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                >
+                  👍
+                </button>
+                <button
+                  type="button"
+                  aria-label="Overall, this was not helpful"
+                  onClick={() => submit("down")}
+                  className="rounded-md px-1.5 py-0.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                >
+                  👎
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        aria-label={open ? "Close feedback" : "Rate this checklist"}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-12 w-12 items-center justify-center rounded-full border border-brand bg-brand text-xl shadow-lg transition motion-safe:hover:scale-105"
+      >
+        {rating ? "✓" : "⭐"}
+      </button>
     </div>
   );
 }
@@ -496,69 +538,71 @@ function Timeline({
   const showRatingCard = allDone || hasCheckedAStep || hasScrolledDeep;
 
   return (
-    <div className="flex flex-col gap-8">
-      {hasContentChanged && (
-        <div className="rounded-xl border border-brand bg-brand/10 p-4 text-sm text-zinc-800 dark:text-zinc-100">
-          We&apos;ve updated this checklist since your last visit — take a look at what&apos;s changed below.
-        </div>
-      )}
-      {!isExactMatch && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-          Your exact situation isn&apos;t covered yet — showing the closest match we have.
-        </div>
-      )}
-      {guide.program_level === "undergraduate" && (
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-          This path is newer and less tested than the graduate path — let us know if something looks off.
-        </div>
-      )}
-      {isWellPastWindow && (
-        <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-          It&apos;s been over six weeks since you landed — you&apos;re past the window this checklist is built for,
-          so some of what&apos;s below may no longer be relevant.
-        </div>
-      )}
-      {showRatingCard && <OverallRatingCard allDone={allDone} feedbackContext={feedbackContext} />}
-      {isEstimated && (
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
-          Dates below are estimated from the arrival date you guessed — once you book your flight, come back and
-          update it for exact dates.
-        </div>
-      )}
-      {stepsByPhase.map(({ phase, steps }) => {
-        const isPastPhase = steps.every((s) => daysBetween(resolveStepDate(arrivalDate, s), today) > 0);
-        if (isPastPhase) {
+    <>
+      {showRatingCard && <FloatingRatingButton allDone={allDone} feedbackContext={feedbackContext} />}
+      <div className="flex flex-col gap-8">
+        {hasContentChanged && (
+          <div className="rounded-xl border border-brand bg-brand/10 p-4 text-sm text-zinc-800 dark:text-zinc-100">
+            We&apos;ve updated this checklist since your last visit — take a look at what&apos;s changed below.
+          </div>
+        )}
+        {!isExactMatch && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            Your exact situation isn&apos;t covered yet — showing the closest match we have.
+          </div>
+        )}
+        {guide.program_level === "undergraduate" && (
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+            This path is newer and less tested than the graduate path — let us know if something looks off.
+          </div>
+        )}
+        {isWellPastWindow && (
+          <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+            It&apos;s been over six weeks since you landed — you&apos;re past the window this checklist is built for,
+            so some of what&apos;s below may no longer be relevant.
+          </div>
+        )}
+        {isEstimated && (
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+            Dates below are estimated from the arrival date you guessed — once you book your flight, come back and
+            update it for exact dates.
+          </div>
+        )}
+        {stepsByPhase.map(({ phase, steps }) => {
+          const isPastPhase = steps.every((s) => daysBetween(resolveStepDate(arrivalDate, s), today) > 0);
+          if (isPastPhase) {
+            return (
+              <ReviewStrip
+                key={phase.key}
+                phase={phase}
+                steps={steps}
+                arrivalDate={arrivalDate}
+                isEstimated={isEstimated}
+                feedbackContext={feedbackContext}
+              />
+            );
+          }
           return (
-            <ReviewStrip
-              key={phase.key}
-              phase={phase}
-              steps={steps}
-              arrivalDate={arrivalDate}
-              isEstimated={isEstimated}
-              feedbackContext={feedbackContext}
-            />
+            <section key={phase.key} aria-label={phase.label} className="flex flex-col gap-3">
+              <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+                {phase.label}
+              </h2>
+              <ul className="flex flex-col gap-3">
+                {steps.map((step) => (
+                  <StepCard
+                    key={step.id}
+                    arrivalDate={arrivalDate}
+                    step={step}
+                    isEstimated={isEstimated}
+                    feedbackContext={feedbackContext}
+                  />
+                ))}
+              </ul>
+            </section>
           );
-        }
-        return (
-          <section key={phase.key} aria-label={phase.label} className="flex flex-col gap-3">
-            <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
-              {phase.label}
-            </h2>
-            <ul className="flex flex-col gap-3">
-              {steps.map((step) => (
-                <StepCard
-                  key={step.id}
-                  arrivalDate={arrivalDate}
-                  step={step}
-                  isEstimated={isEstimated}
-                  feedbackContext={feedbackContext}
-                />
-              ))}
-            </ul>
-          </section>
-        );
-      })}
-    </div>
+        })}
+      </div>
+    </>
   );
 }
 
