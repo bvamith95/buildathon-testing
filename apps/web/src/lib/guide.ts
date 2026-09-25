@@ -86,6 +86,46 @@ export function resolveStepDate(arrivalDate: Date, step: Step): Date {
   return date;
 }
 
+// Recheck window in days before a source counts as stale, mirroring
+// pipeline/landfall_pipeline/config.py's RECHECK_WINDOW_DAYS (30 for
+// immigration content, 90 for everything else — docs/decisions.md,
+// "Set the recheck window"). Keyed by organisation since Source has no
+// separate category field.
+const RECHECK_WINDOW_DAYS: Record<string, number> = {
+  IRCC: 30,
+};
+const DEFAULT_RECHECK_WINDOW_DAYS = 90;
+
+/** The PRD's "Stale" state (docs/prd.md, "Content states") isn't baked
+ * into the published step — it's a function of today's date against the
+ * source's last_verified date, so this is evaluated at render time
+ * rather than requiring a republish. Only a step with real sourced
+ * content can go stale; no_source has nothing to check. */
+export function effectiveState(step: Step, today: Date = new Date()): StepState {
+  if (step.state !== "verified" && step.state !== "not_specific") return step.state;
+  const primarySource = step.sources[0];
+  if (!primarySource?.last_verified) return step.state;
+
+  const windowDays = RECHECK_WINDOW_DAYS[primarySource.organisation] ?? DEFAULT_RECHECK_WINDOW_DAYS;
+  const lastVerified = new Date(`${primarySource.last_verified}T00:00:00`);
+  const ageDays = Math.floor((today.getTime() - lastVerified.getTime()) / (1000 * 60 * 60 * 24));
+  return ageDays > windowDays ? "stale" : step.state;
+}
+
+/** Absolute + relative together, e.g. "Wed, May 27 · in 45 days"
+ * (docs/prd.md: "the relative framing is what makes it feel personal"). */
+export function formatRelativeDate(date: Date, today: Date = new Date()): string {
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "tomorrow";
+  if (diffDays === -1) return "yesterday";
+  if (diffDays > 1) return `in ${diffDays} days`;
+  return `${Math.abs(diffDays)} days ago`;
+}
+
 export function cacheKey(bucketSignature: string, level: ProgramLevel): string {
   return `${bucketSignature}__${level}`;
 }
