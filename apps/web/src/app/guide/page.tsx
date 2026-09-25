@@ -233,17 +233,17 @@ function StepCard({
   step,
   isEstimated,
   feedbackContext,
-  guideKey,
+  profileKey,
 }: {
   arrivalDate: Date;
   step: Step;
   isEstimated: boolean;
   feedbackContext: FeedbackContext;
-  guideKey: string;
+  profileKey: string;
 }) {
   const date = resolveStepDate(arrivalDate, step);
   const state: StepState = effectiveState(step);
-  const [status, setStatus] = useStepStatus(guideKey, step.id);
+  const [status, setStatus] = useStepStatus(profileKey, step.id);
   const [whyExpanded, setWhyExpanded] = useState(false);
   const [thumbsPhase, setThumbsPhase] = useState<"idle" | "reasons" | "done">("idle");
 
@@ -575,14 +575,14 @@ function ReviewStrip({
   arrivalDate,
   isEstimated,
   feedbackContext,
-  guideKey,
+  profileKey,
 }: {
   phase: (typeof PHASES)[number];
   steps: Step[];
   arrivalDate: Date;
   isEstimated: boolean;
   feedbackContext: FeedbackContext;
-  guideKey: string;
+  profileKey: string;
 }) {
   const dates = steps.map((s) => resolveStepDate(arrivalDate, s));
   const earliest = formatDate(dates.reduce((a, b) => (a < b ? a : b)));
@@ -603,7 +603,7 @@ function ReviewStrip({
             step={step}
             isEstimated={isEstimated}
             feedbackContext={feedbackContext}
-            guideKey={guideKey}
+            profileKey={profileKey}
           />
         ))}
       </ul>
@@ -627,10 +627,12 @@ function Timeline({
   hasContentChanged: boolean;
 }) {
   const today = new Date();
-  // Checkbox state is scoped to this specific guide (not just STEP.id —
-  // see progress.ts), since the same step ids are reused by design across
-  // every bucket's guide.
-  const guideKey = cacheKey(guide.bucket_signature, guide.program_level);
+  // Checkbox state is scoped to the full profile -- bucket + level +
+  // arrival date, not just the guide's own content cache key (see
+  // progress.ts) -- so two students sharing the same cached guide, or a
+  // shared link landing someone on the same bucket+level with a different
+  // arrival date, never see each other's progress.
+  const profileKey = `${cacheKey(guide.bucket_signature, guide.program_level)}::${arrivalDate.getTime()}`;
 
   const stepsByPhase = PHASES.map((phase) => ({
     phase,
@@ -643,7 +645,7 @@ function Timeline({
   const isWellPastWindow = daysSinceArrival > WELL_PAST_WINDOW_DAYS;
 
   const checkboxStepIds = guide.steps.filter((s) => effectiveState(s) !== "no_source").map((s) => s.id);
-  const statuses = useAllStepStatuses(guideKey, checkboxStepIds);
+  const statuses = useAllStepStatuses(profileKey, checkboxStepIds);
   const allDone =
     checkboxStepIds.length > 0 &&
     checkboxStepIds.every((id) => statuses[id] === "done" || statuses[id] === "not_applicable");
@@ -707,7 +709,7 @@ function Timeline({
                 arrivalDate={arrivalDate}
                 isEstimated={isEstimated}
                 feedbackContext={feedbackContext}
-                guideKey={guideKey}
+                profileKey={profileKey}
               />
             );
           }
@@ -724,7 +726,7 @@ function Timeline({
                     step={step}
                     isEstimated={isEstimated}
                     feedbackContext={feedbackContext}
-                    guideKey={guideKey}
+                    profileKey={profileKey}
                   />
                 ))}
               </ul>
