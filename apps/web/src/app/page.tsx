@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -6,8 +9,13 @@ import {
   SCOPE_ITEMS,
   SOURCE_ORGANISATIONS,
 } from "@/lib/content";
+import { track } from "@/lib/analytics";
 
 export default function Landing() {
+  useEffect(() => {
+    track("landing_view", { referrer: document.referrer || null });
+  }, []);
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <main className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-12 sm:px-8">
@@ -92,12 +100,14 @@ export default function Landing() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Link
               href="/intake?level=graduate"
+              onClick={() => track("level_selected", { level: "graduate" })}
               className="rounded-xl border border-brand bg-brand px-6 py-5 text-center text-base font-semibold text-brand-foreground transition hover:bg-brand-hover hover:border-brand-hover"
             >
               Graduate student
             </Link>
             <Link
               href="/intake?level=undergraduate"
+              onClick={() => track("level_selected", { level: "undergraduate" })}
               className="rounded-xl border border-zinc-300 px-6 py-5 text-center text-base font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
             >
               Undergraduate student

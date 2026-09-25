@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { resolveBucket } from "@/lib/buckets";
+import { resolveBucket, signatureString } from "@/lib/buckets";
 import {
   Guide,
   PHASES,
@@ -18,10 +18,24 @@ import {
   resolveStepDate,
 } from "@/lib/guide";
 import { StepStatus, nextStatus, useAllStepStatuses, useStepStatus } from "@/lib/progress";
+import { computeProfileHash, getSessionId, track } from "@/lib/analytics";
 
 // Beyond this many days after arrival, the guide is past its stated
 // coverage window (docs/prd.md: "roughly six weeks after arrival").
 const WELL_PAST_WINDOW_DAYS = 42;
+
+// Bundles what feedback_submitted needs (docs/prd.md's "Feedback payload")
+// so it doesn't have to be threaded as three separate props through
+// Timeline -> ReviewStrip -> StepCard and Timeline -> AllDoneBanner.
+interface FeedbackContext {
+  profileHash: string | null;
+  contentVersion: number;
+  guideLoadedAt: number;
+}
+
+function secondsSinceGeneration(ctx: FeedbackContext): number {
+  return Math.round((Date.now() - ctx.guideLoadedAt) / 1000);
+}
 
 function parseLevel(raw: string | null): ProgramLevel {
   return raw === "undergrad" || raw === "undergraduate" ? "undergraduate" : "graduate";
@@ -129,6 +143,7 @@ function MinimalStepCard({ step, date, isEstimated }: { step: Step; date: Date; 
         href={step.where.url || undefined}
         target="_blank"
         rel="noreferrer"
+        onClick={() => track("outbound_click", { step_id: step.id, host: step.where.host })}
         className="mt-3 inline-block text-sm font-medium text-brand-hover underline underline-offset-2 dark:text-brand"
       >
         {step.where.label} &rarr;
@@ -137,7 +152,17 @@ function MinimalStepCard({ step, date, isEstimated }: { step: Step; date: Date; 
   );
 }
 
-function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step: Step; isEstimated: boolean }) {
+function StepCard({
+  arrivalDate,
+  step,
+  isEstimated,
+  feedbackContext,
+}: {
+  arrivalDate: Date;
+  step: Step;
+  isEstimated: boolean;
+  feedbackContext: FeedbackContext;
+}) {
   const date = resolveStepDate(arrivalDate, step);
   const state: StepState = effectiveState(step);
   const [status, setStatus] = useStepStatus(step.id);
@@ -166,7 +191,14 @@ function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step:
       )}
 
       <div className="flex items-start gap-3">
-        <CheckboxButton status={status} onCycle={() => setStatus(nextStatus(status))} />
+        <CheckboxButton
+          status={status}
+          onCycle={() => {
+            const next = nextStatus(status);
+            setStatus(next);
+            track("step_checked", { step_id: step.id, status: next });
+          }}
+        />
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-1">
             <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-500">
@@ -195,7 +227,11 @@ function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step:
             {step.why.length > 100 && (
               <button
                 type="button"
-                onClick={() => setWhyExpanded((v) => !v)}
+                onClick={() => {
+                  const next = !whyExpanded;
+                  setWhyExpanded(next);
+                  if (next) track("step_expanded", { step_id: step.id, state });
+                }}
                 aria-expanded={whyExpanded}
                 className="mt-1 text-xs font-medium text-brand-hover dark:text-brand"
               >
@@ -242,6 +278,7 @@ function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step:
             href={step.where.url}
             target="_blank"
             rel="noreferrer"
+            onClick={() => track("outbound_click", { step_id: step.id, host: step.where.host })}
             className="mt-3 inline-block text-sm font-medium text-brand-hover underline underline-offset-2 dark:text-brand"
           >
             {step.where.label} ({step.where.host}) &rarr;
@@ -256,10 +293,9 @@ function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step:
             </p>
           )}
 
-          {/* Local-only for now: no submission endpoint or event yet
-              (SAA-43 feedback flow, SAA-67 Supabase backend). The card
-              anatomy calls for thumbs regardless, so this is the UI
-              ahead of the wiring. */}
+          {/* Reason/text capture (the richer part of the PRD's feedback
+              payload) is still SAA-43 -- this submits the simple
+              up/down straight away since the backend now exists. */}
           <div className="mt-3 flex items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
             <span className="text-xs text-zinc-400 dark:text-zinc-600">Was this helpful?</span>
             {thanked ? (
@@ -269,7 +305,17 @@ function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step:
                 <button
                   type="button"
                   aria-label="Yes, this was helpful"
-                  onClick={() => setThanked(true)}
+                  onClick={() => {
+                    setThanked(true);
+                    track("feedback_submitted", {
+                      scope: "step",
+                      value: "up",
+                      step_id: step.id,
+                      profile_hash: feedbackContext.profileHash,
+                      content_version: feedbackContext.contentVersion,
+                      seconds_since_generation: secondsSinceGeneration(feedbackContext),
+                    });
+                  }}
                   className="rounded-md px-1.5 py-0.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
                 >
                   👍
@@ -277,7 +323,17 @@ function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step:
                 <button
                   type="button"
                   aria-label="No, this was not helpful"
-                  onClick={() => setThanked(true)}
+                  onClick={() => {
+                    setThanked(true);
+                    track("feedback_submitted", {
+                      scope: "step",
+                      value: "down",
+                      step_id: step.id,
+                      profile_hash: feedbackContext.profileHash,
+                      content_version: feedbackContext.contentVersion,
+                      seconds_since_generation: secondsSinceGeneration(feedbackContext),
+                    });
+                  }}
                   className="rounded-md px-1.5 py-0.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
                 >
                   👎
@@ -291,8 +347,20 @@ function StepCard({ arrivalDate, step, isEstimated }: { arrivalDate: Date; step:
   );
 }
 
-function AllDoneBanner() {
+function AllDoneBanner({ feedbackContext }: { feedbackContext: FeedbackContext }) {
   const [rating, setRating] = useState<"up" | "down" | null>(null);
+
+  function submit(value: "up" | "down") {
+    setRating(value);
+    track("feedback_submitted", {
+      scope: "overall",
+      value,
+      profile_hash: feedbackContext.profileHash,
+      content_version: feedbackContext.contentVersion,
+      seconds_since_generation: secondsSinceGeneration(feedbackContext),
+    });
+  }
+
   return (
     <div className="rounded-xl border border-brand bg-brand/10 p-4 text-sm text-zinc-800 dark:text-zinc-100">
       <p className="font-semibold">You&apos;ve been through your whole checklist. Nice work.</p>
@@ -302,11 +370,10 @@ function AllDoneBanner() {
         ) : (
           <>
             <span className="text-xs text-zinc-600 dark:text-zinc-400">How did this checklist do overall?</span>
-            {/* Local-only for now, same as per-step thumbs — no backend yet (SAA-43/67). */}
             <button
               type="button"
               aria-label="Overall, this was helpful"
-              onClick={() => setRating("up")}
+              onClick={() => submit("up")}
               className="rounded-md px-1.5 py-0.5 text-sm hover:bg-white/50 dark:hover:bg-black/20"
             >
               👍
@@ -314,7 +381,7 @@ function AllDoneBanner() {
             <button
               type="button"
               aria-label="Overall, this was not helpful"
-              onClick={() => setRating("down")}
+              onClick={() => submit("down")}
               className="rounded-md px-1.5 py-0.5 text-sm hover:bg-white/50 dark:hover:bg-black/20"
             >
               👎
@@ -331,11 +398,13 @@ function ReviewStrip({
   steps,
   arrivalDate,
   isEstimated,
+  feedbackContext,
 }: {
   phase: (typeof PHASES)[number];
   steps: Step[];
   arrivalDate: Date;
   isEstimated: boolean;
+  feedbackContext: FeedbackContext;
 }) {
   const dates = steps.map((s) => resolveStepDate(arrivalDate, s));
   const earliest = formatDate(dates.reduce((a, b) => (a < b ? a : b)));
@@ -350,7 +419,13 @@ function ReviewStrip({
       </summary>
       <ul className="flex flex-col gap-3 border-t border-zinc-100 p-4 pt-4 dark:border-zinc-900">
         {steps.map((step) => (
-          <StepCard key={step.id} arrivalDate={arrivalDate} step={step} isEstimated={isEstimated} />
+          <StepCard
+            key={step.id}
+            arrivalDate={arrivalDate}
+            step={step}
+            isEstimated={isEstimated}
+            feedbackContext={feedbackContext}
+          />
         ))}
       </ul>
     </details>
@@ -362,11 +437,13 @@ function Timeline({
   arrivalDate,
   isExactMatch,
   isEstimated,
+  feedbackContext,
 }: {
   guide: Guide;
   arrivalDate: Date;
   isExactMatch: boolean;
   isEstimated: boolean;
+  feedbackContext: FeedbackContext;
 }) {
   const today = new Date();
 
@@ -404,7 +481,7 @@ function Timeline({
           so some of what&apos;s below may no longer be relevant.
         </div>
       )}
-      {allDone && <AllDoneBanner />}
+      {allDone && <AllDoneBanner feedbackContext={feedbackContext} />}
       {isEstimated && (
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
           Dates below are estimated from the arrival date you guessed — once you book your flight, come back and
@@ -421,6 +498,7 @@ function Timeline({
               steps={steps}
               arrivalDate={arrivalDate}
               isEstimated={isEstimated}
+              feedbackContext={feedbackContext}
             />
           );
         }
@@ -431,7 +509,13 @@ function Timeline({
             </h2>
             <ul className="flex flex-col gap-3">
               {steps.map((step) => (
-                <StepCard key={step.id} arrivalDate={arrivalDate} step={step} isEstimated={isEstimated} />
+                <StepCard
+                  key={step.id}
+                  arrivalDate={arrivalDate}
+                  step={step}
+                  isEstimated={isEstimated}
+                  feedbackContext={feedbackContext}
+                />
               ))}
             </ul>
           </section>
@@ -445,6 +529,9 @@ function GuideView() {
   const searchParams = useSearchParams();
   const [result, setResult] = useState<{ key: string; guide: Guide; isExactMatch: boolean } | null>(null);
   const [notFoundKey, setNotFoundKey] = useState<string | null>(null);
+  const [feedbackMeta, setFeedbackMeta] = useState<{ key: string; profileHash: string | null; loadedAt: number } | null>(
+    null
+  );
 
   const citizenshipCode = searchParams.get("c");
   const level = parseLevel(searchParams.get("l"));
@@ -457,14 +544,30 @@ function GuideView() {
   useEffect(() => {
     if (!isValid || !citizenshipCode) return;
     let cancelled = false;
+    const startedAt = performance.now();
     const bucket = resolveBucket(citizenshipCode);
-    loadGuideForSignature(bucket, level).then((loaded) => {
+    loadGuideForSignature(bucket, level).then(async (loaded) => {
       if (cancelled) return;
       if (!loaded) {
         setNotFoundKey(requestKey);
         return;
       }
       setResult({ key: requestKey, ...loaded });
+      const loadedAt = Date.now(); // fine here — this runs in a .then() callback, not during render
+      setFeedbackMeta({ key: requestKey, profileHash: null, loadedAt });
+
+      const sessionId = getSessionId();
+      const profileHash = sessionId
+        ? await computeProfileHash(`${signatureString(bucket)}|${level}`, sessionId)
+        : null;
+      if (cancelled) return;
+      setFeedbackMeta({ key: requestKey, profileHash, loadedAt });
+
+      track("guide_generated", {
+        profile_hash: profileHash,
+        content_version: loaded.guide.content_version,
+        latency_ms: Math.round(performance.now() - startedAt),
+      });
     });
     return () => {
       cancelled = true;
@@ -508,6 +611,17 @@ function GuideView() {
             arrivalDate={arrivalDate}
             isExactMatch={result.isExactMatch}
             isEstimated={isEstimated}
+            feedbackContext={{
+              // feedbackMeta is set in the same batch as `result` (see the
+              // effect above), so by the time `result` renders with a
+              // matching key, feedbackMeta does too — this fallback is
+              // just for TypeScript, not an expected runtime path, so it
+              // uses a static sentinel rather than calling Date.now()
+              // during render (impure — not allowed in a component body).
+              profileHash: feedbackMeta?.key === requestKey ? feedbackMeta.profileHash : null,
+              contentVersion: result.guide.content_version,
+              guideLoadedAt: feedbackMeta?.key === requestKey ? feedbackMeta.loadedAt : 0,
+            }}
           />
         )}
       </main>

@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CitizenshipEntry, searchCitizenships } from "@/lib/buckets";
+import { track } from "@/lib/analytics";
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -21,9 +22,34 @@ function IntakeForm() {
   const results = useMemo(() => searchCitizenships(query).slice(0, 8), [query]);
   const canSubmit = selected !== null && arrivalDate.length > 0;
 
+  // Read via refs (not state) inside the unmount cleanup below, so the
+  // effect only needs to run once and doesn't re-fire on every keystroke.
+  // Refs are synced after render via their own effects, never written
+  // during render itself.
+  const submittedRef = useRef(false);
+  const selectedRef = useRef(selected);
+  const arrivalDateRef = useRef(arrivalDate);
+
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
+
+  useEffect(() => {
+    arrivalDateRef.current = arrivalDate;
+  }, [arrivalDate]);
+
+  useEffect(() => {
+    return () => {
+      if (submittedRef.current) return;
+      const field = !selectedRef.current ? "citizenship" : !arrivalDateRef.current ? "arrival_date" : null;
+      if (field) track("intake_field_abandon", { field });
+    };
+  }, []);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selected || !arrivalDate) return;
+    submittedRef.current = true;
     const params = new URLSearchParams({
       c: selected.code,
       d: arrivalDate,
