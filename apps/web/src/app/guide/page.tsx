@@ -347,7 +347,13 @@ function StepCard({
   );
 }
 
-function AllDoneBanner({ feedbackContext }: { feedbackContext: FeedbackContext }) {
+// SAA-43: shown on first deep scroll or first checkbox tick, never on
+// generation -- gating this on "all steps done" alone (the PRD's
+// guide-level state) would mean most users, who never finish every step,
+// never see it, biasing the helpful-rate metric toward only the most
+// thorough users. `allDone` still gets its own congratulatory framing
+// when it applies, since finishing everything really is worth noting.
+function OverallRatingCard({ allDone, feedbackContext }: { allDone: boolean; feedbackContext: FeedbackContext }) {
   const [rating, setRating] = useState<"up" | "down" | null>(null);
 
   function submit(value: "up" | "down") {
@@ -363,13 +369,17 @@ function AllDoneBanner({ feedbackContext }: { feedbackContext: FeedbackContext }
 
   return (
     <div className="rounded-xl border border-brand bg-brand/10 p-4 text-sm text-zinc-800 dark:text-zinc-100">
-      <p className="font-semibold">You&apos;ve been through your whole checklist. Nice work.</p>
+      <p className="font-semibold">
+        {allDone
+          ? "You've been through your whole checklist. Nice work."
+          : "How's this checklist working for you so far?"}
+      </p>
       <div className="mt-2 flex items-center gap-2">
         {rating ? (
           <span className="text-xs text-zinc-600 dark:text-zinc-400">Thanks for the rating!</span>
         ) : (
           <>
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">How did this checklist do overall?</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">Rate it overall</span>
             <button
               type="button"
               aria-label="Overall, this was helpful"
@@ -462,6 +472,23 @@ function Timeline({
   const allDone =
     checkboxStepIds.length > 0 &&
     checkboxStepIds.every((id) => statuses[id] === "done" || statuses[id] === "not_applicable");
+  const hasCheckedAStep = checkboxStepIds.some((id) => statuses[id] !== "not_done");
+
+  // "First deep scroll" — both this and hasCheckedAStep only ever go
+  // false -> true, so once the rating card appears it never disappears.
+  const [hasScrolledDeep, setHasScrolledDeep] = useState(false);
+  useEffect(() => {
+    function onScroll() {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollable > 0 && window.scrollY / scrollable > 0.5) {
+        setHasScrolledDeep(true);
+      }
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const showRatingCard = allDone || hasCheckedAStep || hasScrolledDeep;
 
   return (
     <div className="flex flex-col gap-8">
@@ -481,7 +508,7 @@ function Timeline({
           so some of what&apos;s below may no longer be relevant.
         </div>
       )}
-      {allDone && <AllDoneBanner feedbackContext={feedbackContext} />}
+      {showRatingCard && <OverallRatingCard allDone={allDone} feedbackContext={feedbackContext} />}
       {isEstimated && (
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
           Dates below are estimated from the arrival date you guessed — once you book your flight, come back and
