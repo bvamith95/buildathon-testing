@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resolveBucket, signatureString } from "@/lib/buckets";
 import {
@@ -10,6 +10,7 @@ import {
   ProgramLevel,
   Step,
   StepState,
+  cacheKey,
   daysBetween,
   effectiveState,
   formatRelativeDate,
@@ -19,6 +20,8 @@ import {
 } from "@/lib/guide";
 import { StepStatus, nextStatus, useAllStepStatuses, useStepStatus } from "@/lib/progress";
 import { computeProfileHash, getSessionId, track } from "@/lib/analytics";
+import { loadProfile, saveProfile } from "@/lib/profile";
+import { recordVisit } from "@/lib/visits";
 
 // Beyond this many days after arrival, the guide is past its stated
 // coverage window (docs/prd.md: "roughly six weeks after arrival").
@@ -26,7 +29,7 @@ const WELL_PAST_WINDOW_DAYS = 42;
 
 // Bundles what feedback_submitted needs (docs/prd.md's "Feedback payload")
 // so it doesn't have to be threaded as three separate props through
-// Timeline -> ReviewStrip -> StepCard and Timeline -> AllDoneBanner.
+// Timeline -> ReviewStrip -> StepCard and Timeline -> OverallRatingCard.
 interface FeedbackContext {
   profileHash: string | null;
   contentVersion: number;
@@ -448,12 +451,14 @@ function Timeline({
   isExactMatch,
   isEstimated,
   feedbackContext,
+  hasContentChanged,
 }: {
   guide: Guide;
   arrivalDate: Date;
   isExactMatch: boolean;
   isEstimated: boolean;
   feedbackContext: FeedbackContext;
+  hasContentChanged: boolean;
 }) {
   const today = new Date();
 
@@ -492,6 +497,11 @@ function Timeline({
 
   return (
     <div className="flex flex-col gap-8">
+      {hasContentChanged && (
+        <div className="rounded-xl border border-brand bg-brand/10 p-4 text-sm text-zinc-800 dark:text-zinc-100">
+          We&apos;ve updated this checklist since your last visit — take a look at what&apos;s changed below.
+        </div>
+      )}
       {!isExactMatch && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
           Your exact situation isn&apos;t covered yet — showing the closest match we have.
@@ -554,19 +564,53 @@ function Timeline({
 
 function GuideView() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [result, setResult] = useState<{ key: string; guide: Guide; isExactMatch: boolean } | null>(null);
   const [notFoundKey, setNotFoundKey] = useState<string | null>(null);
   const [feedbackMeta, setFeedbackMeta] = useState<{ key: string; profileHash: string | null; loadedAt: number } | null>(
     null
   );
+  const [changeInfo, setChangeInfo] = useState<{ key: string; versionDelta: number } | null>(null);
 
-  const citizenshipCode = searchParams.get("c");
-  const level = parseLevel(searchParams.get("l"));
-  const arrivalDate = parseArrivalDate(searchParams.get("d"));
-  const isEstimated = searchParams.get("e") === "1";
+  const urlCitizenship = searchParams.get("c");
+  const urlLevel = searchParams.get("l");
+  const urlDate = searchParams.get("d");
+  const urlEstimate = searchParams.get("e");
+  const hasUrlProfile = urlCitizenship !== null && urlDate !== null;
+
+  // URL params -> localStorage -> fresh start (CLAUDE.md's architectural
+  // constraint), never the other way -- localStorage is only ever
+  // consulted when the URL is missing pieces, so a shared link always
+  // builds the recipient their own guide rather than handing them
+  // whichever profile is sitting in their own browser's storage.
+  const stored = hasUrlProfile ? null : loadProfile();
+
+  const citizenshipCode = urlCitizenship ?? stored?.c ?? null;
+  const level = parseLevel(urlLevel ?? stored?.l ?? null);
+  const rawDate = urlDate ?? stored?.d ?? null;
+  const arrivalDate = parseArrivalDate(rawDate);
+  const isEstimated = (urlEstimate ?? stored?.e) === "1";
+
   const arrivalDateValue = arrivalDate?.getTime() ?? null;
   const isValid = citizenshipCode !== null && arrivalDateValue !== null;
   const requestKey = `${citizenshipCode}|${level}|${arrivalDateValue}`;
+
+  // Keeps the URL and localStorage in sync with whatever profile actually
+  // resolved -- the URL because "profile lives in the URL" is what makes
+  // this shareable, localStorage because that's what makes a bare
+  // `/guide` visit resolve to something instead of "fresh start".
+  // Self-limiting: once the URL carries the profile, hasUrlProfile flips
+  // true and this stops replacing it.
+  useEffect(() => {
+    if (!isValid || !citizenshipCode || !rawDate) return;
+    const levelParam = urlLevel ?? stored?.l ?? "grad";
+    saveProfile({ c: citizenshipCode, d: rawDate, l: levelParam, e: isEstimated ? "1" : undefined });
+    if (!hasUrlProfile) {
+      const params = new URLSearchParams({ c: citizenshipCode, d: rawDate, l: levelParam });
+      if (isEstimated) params.set("e", "1");
+      router.replace(`/guide?${params.toString()}`);
+    }
+  }, [isValid, citizenshipCode, rawDate, isEstimated, hasUrlProfile, urlLevel, stored?.l, router]);
 
   useEffect(() => {
     if (!isValid || !citizenshipCode) return;
@@ -582,6 +626,21 @@ function GuideView() {
       setResult({ key: requestKey, ...loaded });
       const loadedAt = Date.now(); // fine here — this runs in a .then() callback, not during render
       setFeedbackMeta({ key: requestKey, profileHash: null, loadedAt });
+
+      // Return-visit resolution (docs/prd.md's guide-level "return visit"
+      // state): compares against the last content_version this browser
+      // saw for this specific guide, fires the retention event either
+      // way, and surfaces a change banner only when content actually
+      // moved forward.
+      const visitCacheKey = cacheKey(loaded.guide.bucket_signature, loaded.guide.program_level);
+      const visitInfo = recordVisit(visitCacheKey, loaded.guide.content_version);
+      if (visitInfo) {
+        setChangeInfo({ key: requestKey, versionDelta: visitInfo.versionDelta });
+        track("return_visit", {
+          days_since_last: visitInfo.daysSinceLast,
+          version_delta: visitInfo.versionDelta,
+        });
+      }
 
       const sessionId = getSessionId();
       const profileHash = sessionId
@@ -649,6 +708,7 @@ function GuideView() {
               contentVersion: result.guide.content_version,
               guideLoadedAt: feedbackMeta?.key === requestKey ? feedbackMeta.loadedAt : 0,
             }}
+            hasContentChanged={changeInfo?.key === requestKey && changeInfo.versionDelta > 0}
           />
         )}
       </main>
