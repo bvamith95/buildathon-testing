@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // SAA-51: generates the Week 4 metrics report from docs/prd.md's "Success
 // metrics" table against the live Supabase events store. Run with
-// `npm run metrics` (optionally `-- --since=2026-10-01`) from apps/web.
+// `npm run metrics` (optionally `-- --since=2026-10-01 --until=2026-10-02`)
+// from apps/web.
 //
 // This is a report generator, not a dashboard: there's no UI, no auth
 // surface to build or forget to lock down, and it can run against
-// whatever slice of real usage exists (the full history, or --since a
-// date, e.g. to isolate the SAA-58 dry run).
+// whatever slice of real usage exists (the full history, or a --since/
+// --until window, e.g. to isolate the SAA-58 dry run -- see
+// docs/dry-run-plan.md).
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "node:fs";
@@ -29,6 +31,8 @@ loadEnvLocal();
 
 const sinceArg = process.argv.find((a) => a.startsWith("--since="));
 const since = sinceArg ? sinceArg.slice("--since=".length) : null;
+const untilArg = process.argv.find((a) => a.startsWith("--until="));
+const until = untilArg ? untilArg.slice("--until=".length) : null;
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -52,6 +56,7 @@ async function fetchAll(table, dateColumn = "created_at") {
       .order(dateColumn, { ascending: true })
       .range(from, from + pageSize - 1);
     if (since) query = query.gte(dateColumn, since);
+    if (until) query = query.lt(dateColumn, until);
     const { data, error } = await query;
     if (error) throw new Error(`${table}: ${error.message}`);
     rows.push(...data);
@@ -178,7 +183,7 @@ function countBy(items, keyFn) {
 
   // --- Print ---
 
-  const rangeLabel = since ? `since ${since}` : "all-time";
+  const rangeLabel = since && until ? `${since} to ${until}` : since ? `since ${since}` : until ? `until ${until}` : "all-time";
   console.log(`\nUna metrics report -- ${rangeLabel} (generated ${new Date().toISOString()})\n`);
 
   console.log("PRIMARY METRICS (docs/prd.md targets)");
