@@ -1121,8 +1121,11 @@ function Timeline({
             so some of what&apos;s below may no longer be relevant.
           </div>
         )}
+        {/* Hidden on phones: every date there already carries its own
+            "Estimated" tag, and vertical space above the journey matters
+            more at that width. */}
         {isEstimated && (
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+          <div className="hidden rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 sm:block dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
             Dates below are estimated from the arrival date you guessed — once you book your flight, come back and
             update it for exact dates.
           </div>
