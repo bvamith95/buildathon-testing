@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, Suspense, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resolveBucket, signatureString } from "@/lib/buckets";
@@ -215,9 +216,19 @@ function EstimateTag() {
   );
 }
 
+// Anchor for the Next up card's "See details" jump; tabIndex -1 so focus can
+// land here programmatically without adding a tab stop.
+function stepAnchorId(stepId: string): string {
+  return `step-${stepId}`;
+}
+
 function MinimalStepCard({ step, date, isEstimated }: { step: Step; date: Date; isEstimated: boolean }) {
   return (
-    <li className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <li
+      id={stepAnchorId(step.id)}
+      tabIndex={-1}
+      className="scroll-mt-6 rounded-xl border border-zinc-200 p-4 focus-visible:outline-2 focus-visible:outline-brand-hover dark:border-zinc-800"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
@@ -275,7 +286,9 @@ function StepCard({
 
   return (
     <li
-      className={`rounded-xl border p-4 ${
+      id={stepAnchorId(step.id)}
+      tabIndex={-1}
+      className={`scroll-mt-6 rounded-xl border p-4 focus-visible:outline-2 focus-visible:outline-brand-hover ${
         isStale ? "border-amber-300 dark:border-amber-800" : "border-zinc-200 dark:border-zinc-800"
       }`}
     >
@@ -587,45 +600,312 @@ function FloatingRatingButton({ allDone, feedbackContext }: { allDone: boolean; 
   );
 }
 
-function ReviewStrip({
-  phase,
-  steps,
+interface PhaseGroup {
+  phase: (typeof PHASES)[number];
+  steps: Step[];
+  isPast: boolean;
+  isResolved: boolean;
+  doneCount: number;
+  // Checkbox-bearing steps not marked "doesn't apply" -- a step that
+  // doesn't apply to someone shouldn't count against their progress.
+  trackableCount: number;
+}
+
+function phaseAnchorId(phaseKey: string): string {
+  return `phase-${phaseKey}`;
+}
+
+function phaseButtonId(phaseKey: string): string {
+  return `phase-${phaseKey}-button`;
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      className={`h-4 w-4 motion-safe:transition-transform ${open ? "rotate-180" : ""}`}
+    >
+      <path
+        fillRule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+// One accordion for every phase (docs/prd.md: "Phase accordions, current
+// phase open, others collapsed"). Replaces the old past-phases-only
+// review strip, which looked different from the open phases and had no
+// visible expand affordance at all. Uses the WAI-ARIA accordion pattern
+// (heading > button[aria-expanded]) rather than <details>, so phase names
+// stay real h2s for screen reader heading navigation, and so the journey
+// stepper and Next up card can open a phase programmatically.
+function PhaseAccordion({
+  group,
+  isCurrent,
+  isOpen,
+  onToggle,
   arrivalDate,
   isEstimated,
   feedbackContext,
   profileKey,
 }: {
-  phase: (typeof PHASES)[number];
-  steps: Step[];
+  group: PhaseGroup;
+  isCurrent: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
   arrivalDate: Date;
   isEstimated: boolean;
   feedbackContext: FeedbackContext;
   profileKey: string;
 }) {
+  const { phase, steps, isPast, doneCount, trackableCount } = group;
   const dates = steps.map((s) => resolveStepDate(arrivalDate, s));
   const earliest = formatDate(dates.reduce((a, b) => (a < b ? a : b)));
   const latest = formatDate(dates.reduce((a, b) => (a > b ? a : b)));
   const range = earliest === latest ? earliest : `${earliest} – ${latest}`;
+  const buttonId = phaseButtonId(phase.key);
+  const panelId = `phase-${phase.key}-panel`;
+  const highlight = isCurrent && !isPast;
 
   return (
-    <details className="rounded-xl border border-zinc-200 dark:border-zinc-800">
-      <summary className="cursor-pointer list-none px-4 py-3 text-sm text-zinc-600 marker:content-none dark:text-zinc-400">
-        <span className="font-medium text-zinc-800 dark:text-zinc-200">{phase.label}</span> — {steps.length} step
-        {steps.length === 1 ? "" : "s"}, {range}
-      </summary>
-      <ul className="flex flex-col gap-3 border-t border-zinc-100 p-4 pt-4 dark:border-zinc-900">
-        {steps.map((step) => (
-          <StepCard
-            key={step.id}
-            arrivalDate={arrivalDate}
-            step={step}
-            isEstimated={isEstimated}
-            feedbackContext={feedbackContext}
-            profileKey={profileKey}
-          />
-        ))}
-      </ul>
-    </details>
+    <section
+      id={phaseAnchorId(phase.key)}
+      aria-labelledby={buttonId}
+      className={`scroll-mt-6 rounded-xl border ${
+        highlight ? "border-brand" : "border-zinc-200 dark:border-zinc-800"
+      }`}
+    >
+      <h2>
+        <button
+          id={buttonId}
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls={panelId}
+          onClick={onToggle}
+          className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left"
+        >
+          <span className="min-w-0">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{phase.label}</span>
+              {highlight && (
+                <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-foreground">
+                  Now
+                </span>
+              )}
+              {isPast && (
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+                  Past
+                </span>
+              )}
+            </span>
+            <span className="mt-0.5 block text-xs text-zinc-600 dark:text-zinc-400">
+              {range} &middot; {steps.length} step{steps.length === 1 ? "" : "s"}
+              {trackableCount > 0 && ` · ${doneCount} of ${trackableCount} done`}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            {isOpen ? "Hide" : "Show"}
+            <ChevronIcon open={isOpen} />
+          </span>
+        </button>
+      </h2>
+      <div id={panelId} hidden={!isOpen} className="border-t border-zinc-100 p-4 dark:border-zinc-900">
+        <ul className="flex flex-col gap-3">
+          {steps.map((step) => (
+            <StepCard
+              key={step.id}
+              arrivalDate={arrivalDate}
+              step={step}
+              isEstimated={isEstimated}
+              feedbackContext={feedbackContext}
+              profileKey={profileKey}
+            />
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// Roadmap-style overview (team feedback 2026-09-26): one marker per phase,
+// the connecting line filled up to where the student is by date, a
+// checkmark on phases where every step is done or doesn't apply. Each
+// marker opens and jumps to its phase.
+function JourneyStepper({
+  groups,
+  currentIndex,
+  doneCount,
+  trackableCount,
+  onSelect,
+}: {
+  groups: PhaseGroup[];
+  currentIndex: number;
+  doneCount: number;
+  trackableCount: number;
+  onSelect: (phaseKey: string) => void;
+}) {
+  const n = groups.length;
+  const edge = `${50 / n}%`;
+  const percentDone = trackableCount > 0 ? Math.round((doneCount / trackableCount) * 100) : 0;
+
+  return (
+    <nav aria-label="Your journey" className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Your journey</h2>
+        {trackableCount > 0 && (
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            {doneCount} of {trackableCount} steps done
+          </p>
+        )}
+      </div>
+      {trackableCount > 0 && (
+        <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+          <div className="h-full rounded-full bg-brand" style={{ width: `${percentDone}%` }} />
+        </div>
+      )}
+      <div className="relative mt-4">
+        <div aria-hidden className="absolute top-[15px] h-0.5 bg-zinc-200 dark:bg-zinc-800" style={{ left: edge, right: edge }} />
+        <div
+          aria-hidden
+          className="absolute top-[15px] h-0.5 bg-brand"
+          style={{ left: edge, width: `${(currentIndex / n) * 100}%` }}
+        />
+        <ol className="relative grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+          {groups.map((group, i) => {
+            const isCurrent = i === currentIndex;
+            const circle = group.isResolved
+              ? "border border-brand bg-brand text-brand-foreground"
+              : isCurrent
+                ? "border-2 border-brand bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50"
+                : "border border-zinc-500 bg-white text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400";
+            const srStatus = group.isResolved
+              ? ", complete"
+              : group.trackableCount > 0
+                ? `, ${group.doneCount} of ${group.trackableCount} done`
+                : "";
+            return (
+              <li key={group.phase.key}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(group.phase.key)}
+                  aria-current={isCurrent ? "step" : undefined}
+                  className="flex w-full flex-col items-center gap-1 rounded-lg px-0.5 pb-1 text-center"
+                >
+                  <span
+                    aria-hidden
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${circle} ${
+                      isCurrent ? "ring-2 ring-brand ring-offset-2 ring-offset-white dark:ring-offset-black" : ""
+                    }`}
+                  >
+                    {group.isResolved ? "✓" : i + 1}
+                  </span>
+                  <span className="text-[11px] font-medium leading-tight text-zinc-700 dark:text-zinc-300">
+                    {group.phase.shortLabel}
+                  </span>
+                  {isCurrent && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-brand-text dark:text-brand">
+                      You are here
+                    </span>
+                  )}
+                  <span className="sr-only">{srStatus}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </nav>
+  );
+}
+
+// docs/prd.md: "A pinned next up card carrying the single most urgent
+// undone step." Most urgent = earliest date among steps not yet done or
+// marked "doesn't apply", overdue ones included -- an unticked step whose
+// date has passed is exactly what most needs attention (and if it's
+// actually done, ticking it here is the fix). Source-pending steps are
+// excluded: they have no checkbox, so they could never be cleared from
+// this card.
+function NextUpCard({
+  step,
+  arrivalDate,
+  isEstimated,
+  profileKey,
+  onSeeDetails,
+}: {
+  step: Step;
+  arrivalDate: Date;
+  isEstimated: boolean;
+  profileKey: string;
+  onSeeDetails: () => void;
+}) {
+  const [status, setStatus] = useStepStatus(profileKey, step.id);
+  const date = resolveStepDate(arrivalDate, step);
+  const isOverdue = daysBetween(date, new Date()) > 0;
+
+  function mark(next: StepStatus) {
+    setStatus(next);
+    track("step_checked", { step_id: step.id, status: next });
+  }
+
+  return (
+    <section aria-labelledby="next-up-heading" className="rounded-xl border-2 border-brand p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h2
+          id="next-up-heading"
+          className="text-xs font-semibold uppercase tracking-wide text-brand-text dark:text-brand"
+        >
+          Next up
+        </h2>
+        {isOverdue && (
+          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            Overdue
+          </span>
+        )}
+      </div>
+      <div className="mt-2 flex items-start gap-3">
+        <CheckboxButton status={status} onCycle={() => mark(nextStatus(status))} />
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{step.title}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            {formatDate(date)} &middot; {formatRelativeDate(date)}
+            {isEstimated && <EstimateTag />}
+          </p>
+          <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400">{phaseForOffset(step.offset_days).label}</p>
+          {isOverdue && (
+            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">Already done this? Tick it off.</p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <a
+              href={step.where.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => track("outbound_click", { step_id: step.id, host: step.where.host })}
+              className="font-medium text-brand-text underline underline-offset-2 dark:text-brand"
+            >
+              {step.where.label} &rarr;
+            </a>
+            <button
+              type="button"
+              onClick={onSeeDetails}
+              className="font-medium text-zinc-700 underline underline-offset-2 dark:text-zinc-300"
+            >
+              See details
+            </button>
+            <button
+              type="button"
+              onClick={() => mark("not_applicable")}
+              className="text-zinc-600 underline underline-offset-2 dark:text-zinc-400"
+            >
+              Doesn&apos;t apply to me
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -738,22 +1018,67 @@ function Timeline({
   // arrival date, never see each other's progress.
   const profileKey = `${cacheKey(guide.bucket_signature, guide.program_level)}::${arrivalDate.getTime()}`;
 
-  const stepsByPhase = PHASES.map((phase) => ({
-    phase,
-    steps: guide.steps
-      .filter((s) => phaseForOffset(s.offset_days).key === phase.key)
-      .sort((a, b) => a.offset_days - b.offset_days),
-  })).filter((group) => group.steps.length > 0);
-
   const daysSinceArrival = daysBetween(arrivalDate, today);
   const isWellPastWindow = daysSinceArrival > WELL_PAST_WINDOW_DAYS;
 
-  const checkboxStepIds = guide.steps.filter((s) => effectiveState(s) !== "no_source").map((s) => s.id);
+  const isCheckable = (s: Step) => effectiveState(s) !== "no_source";
+  const checkboxStepIds = guide.steps.filter(isCheckable).map((s) => s.id);
   const statuses = useAllStepStatuses(profileKey, checkboxStepIds);
-  const allDone =
-    checkboxStepIds.length > 0 &&
-    checkboxStepIds.every((id) => statuses[id] === "done" || statuses[id] === "not_applicable");
+  const isResolvedStatus = (id: string) => statuses[id] === "done" || statuses[id] === "not_applicable";
+  const allDone = checkboxStepIds.length > 0 && checkboxStepIds.every(isResolvedStatus);
   const hasCheckedAStep = checkboxStepIds.some((id) => statuses[id] !== "not_done");
+
+  const groups: PhaseGroup[] = PHASES.map((phase) => {
+    const steps = guide.steps
+      .filter((s) => phaseForOffset(s.offset_days).key === phase.key)
+      .sort((a, b) => a.offset_days - b.offset_days);
+    const checkable = steps.filter(isCheckable);
+    return {
+      phase,
+      steps,
+      isPast: steps.every((s) => daysBetween(resolveStepDate(arrivalDate, s), today) > 0),
+      isResolved: checkable.length > 0 && checkable.every((s) => isResolvedStatus(s.id)),
+      doneCount: checkable.filter((s) => statuses[s.id] === "done").length,
+      trackableCount: checkable.filter((s) => statuses[s.id] !== "not_applicable").length,
+    };
+  }).filter((group) => group.steps.length > 0);
+
+  // Current phase = the first one that still has a date today or later.
+  // Past the end of the checklist entirely, fall back to the last phase
+  // so something is still open.
+  const firstUpcoming = groups.findIndex((g) => !g.isPast);
+  const currentIndex = firstUpcoming === -1 ? groups.length - 1 : firstUpcoming;
+  const currentKey = groups[currentIndex]?.phase.key;
+
+  const totalDone = groups.reduce((sum, g) => sum + g.doneCount, 0);
+  const totalTrackable = groups.reduce((sum, g) => sum + g.trackableCount, 0);
+
+  const nextUp =
+    guide.steps
+      .filter((s) => isCheckable(s) && statuses[s.id] === "not_done")
+      .map((s) => ({ step: s, date: resolveStepDate(arrivalDate, s) }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime() || a.step.offset_days - b.step.offset_days)[0]?.step ??
+    null;
+
+  const [openPhases, setOpenPhases] = useState<Set<string>>(() => new Set(currentKey ? [currentKey] : []));
+
+  function togglePhase(phaseKey: string) {
+    setOpenPhases((prev) => {
+      const next = new Set(prev);
+      if (next.has(phaseKey)) next.delete(phaseKey);
+      else next.add(phaseKey);
+      return next;
+    });
+  }
+
+  // flushSync so the target panel is un-hidden (and has layout) before we
+  // scroll to something inside it.
+  function revealPhase(phaseKey: string, scrollTargetId: string, focusTargetId: string) {
+    flushSync(() => setOpenPhases((prev) => (prev.has(phaseKey) ? prev : new Set(prev).add(phaseKey))));
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(scrollTargetId)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    document.getElementById(focusTargetId)?.focus({ preventScroll: true });
+  }
 
   // "First deep scroll" — both this and hasCheckedAStep only ever go
   // false -> true, so once the rating card appears it never disappears.
@@ -802,45 +1127,52 @@ function Timeline({
             update it for exact dates.
           </div>
         )}
+        {groups.length > 0 && (
+          <JourneyStepper
+            groups={groups}
+            currentIndex={currentIndex}
+            doneCount={totalDone}
+            trackableCount={totalTrackable}
+            onSelect={(phaseKey) => revealPhase(phaseKey, phaseAnchorId(phaseKey), phaseButtonId(phaseKey))}
+          />
+        )}
+        {nextUp ? (
+          <NextUpCard
+            key={nextUp.id}
+            step={nextUp}
+            arrivalDate={arrivalDate}
+            isEstimated={isEstimated}
+            profileKey={profileKey}
+            onSeeDetails={() =>
+              revealPhase(phaseForOffset(nextUp.offset_days).key, stepAnchorId(nextUp.id), stepAnchorId(nextUp.id))
+            }
+          />
+        ) : (
+          allDone && (
+            <div className="rounded-xl border-2 border-brand p-4 text-sm text-zinc-800 dark:text-zinc-100">
+              You&apos;re all caught up — every step is done or marked as not applicable.
+            </div>
+          )
+        )}
         {/* Not worth offering reminders once the guide is past its own
             coverage window -- there's nothing upcoming left to remind
             anyone about. */}
         {!isWellPastWindow && <ReminderOptIn guide={guide} arrivalDate={arrivalDate} profileKey={profileKey} />}
-        {stepsByPhase.map(({ phase, steps }) => {
-          const isPastPhase = steps.every((s) => daysBetween(resolveStepDate(arrivalDate, s), today) > 0);
-          if (isPastPhase) {
-            return (
-              <ReviewStrip
-                key={phase.key}
-                phase={phase}
-                steps={steps}
-                arrivalDate={arrivalDate}
-                isEstimated={isEstimated}
-                feedbackContext={feedbackContext}
-                profileKey={profileKey}
-              />
-            );
-          }
-          return (
-            <section key={phase.key} aria-label={phase.label} className="flex flex-col gap-3">
-              <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                {phase.label}
-              </h2>
-              <ul className="flex flex-col gap-3">
-                {steps.map((step) => (
-                  <StepCard
-                    key={step.id}
-                    arrivalDate={arrivalDate}
-                    step={step}
-                    isEstimated={isEstimated}
-                    feedbackContext={feedbackContext}
-                    profileKey={profileKey}
-                  />
-                ))}
-              </ul>
-            </section>
-          );
-        })}
+        <div className="flex flex-col gap-3">
+          {groups.map((group, i) => (
+            <PhaseAccordion
+              key={group.phase.key}
+              group={group}
+              isCurrent={i === currentIndex}
+              isOpen={openPhases.has(group.phase.key)}
+              onToggle={() => togglePhase(group.phase.key)}
+              arrivalDate={arrivalDate}
+              isEstimated={isEstimated}
+              feedbackContext={feedbackContext}
+              profileKey={profileKey}
+            />
+          ))}
+        </div>
       </div>
     </>
   );

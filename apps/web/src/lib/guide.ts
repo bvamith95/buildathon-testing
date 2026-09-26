@@ -54,12 +54,14 @@ export interface Guide {
 }
 
 // Matches pipeline/run_pilot.py's PILOT_STEPS phase keys exactly.
-export const PHASES: { key: string; label: string; minOffset: number; maxOffset: number }[] = [
-  { key: "after_your_offer", label: "After you accept your offer", minOffset: -Infinity, maxOffset: -60 },
-  { key: "preparing_to_move", label: "Preparing to move", minOffset: -59, maxOffset: -1 },
-  { key: "landing_day", label: "Landing day", minOffset: 0, maxOffset: 0 },
-  { key: "first_two_weeks", label: "Your first two weeks", minOffset: 1, maxOffset: 14 },
-  { key: "weeks_three_and_four", label: "Weeks three and four", minOffset: 15, maxOffset: 30 },
+// shortLabel is for the journey stepper, where five full labels won't fit
+// side by side at phone width.
+export const PHASES: { key: string; label: string; shortLabel: string; minOffset: number; maxOffset: number }[] = [
+  { key: "after_your_offer", label: "After you accept your offer", shortLabel: "Accept offer", minOffset: -Infinity, maxOffset: -60 },
+  { key: "preparing_to_move", label: "Preparing to move", shortLabel: "Prepare", minOffset: -59, maxOffset: -1 },
+  { key: "landing_day", label: "Landing day", shortLabel: "Landing", minOffset: 0, maxOffset: 0 },
+  { key: "first_two_weeks", label: "Your first two weeks", shortLabel: "Weeks 1–2", minOffset: 1, maxOffset: 14 },
+  { key: "weeks_three_and_four", label: "Weeks three and four", shortLabel: "Weeks 3–4", minOffset: 15, maxOffset: 30 },
 ];
 
 export function phaseForOffset(offsetDays: number) {
